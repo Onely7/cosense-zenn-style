@@ -1,0 +1,123 @@
+[#*** Cosense 記法一覧]
+[#** 基本的な文字装飾記法]
+
+[#* 強調]
+ `[* 強調]` ⇒ [* 強調]
+ `[**** もっと大きな文字]` => [**** もっと大きな文字]
+
+[#* 斜体]
+ `[/ 斜体文字]` ⇒ [/ 斜体文字]
+ `[/* 強調斜体文字]` => [/* 強調斜体文字]
+
+[#* 打ち消し線]
+ `[- 打ち消し]` ⇒ [- 打ち消し]
+ `[-/*** 打ち消し斜体大きな文字]` ⇒ [-/*** 打ち消し斜体大きな文字]
+[https://gyazo.com/00ab07461d502db91c8ae170276d1396]
+
+[#* マーカー (色) による強調]
+	`[! hoge moga]` → [! hoge moga]
+	`[!* hoge moga]` → [!* hoge moga]
+	`[[hoge moga]]` → [[hoge moga]]
+
+
+[#** その他の記法]
+
+[#* 外部リンク (一般の Web ページへのリンク)]
+ URL を書くとリンクになる
+  https://yahoo.co.jp
+	`[URL タイトル]`
+	 [https://yahoo.com Yahoo!]
+ `[タイトル URL]`逆順でもOK
+  [Yahoo! https://yahoo.com]
+
+[#* 画像]
+	`[画像URL]`
+  [https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png]
+  `[動画を埋め込む]` も同様
+ `[[画像URL]]`
+  横幅いっぱい、高さ制限無しで大きな画像を表示
+
+リンク付き画像
+	`[リンク先URL 画像URL]`
+  [http://yahoo.co.jp https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png]
+	`[画像URL リンク先URL]`逆順でも OK
+  [https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png http://yahoo.co.jp]
+
+[#* 別プロジェクトへのリンク]
+ `/プロジェクト名/ページ名`
+ [/icons]
+ [/icons/すごい]
+
+[#* アイコン (絵文字)]
+ [/icons/炎上.icon]
+
+[#* 数式]
+ [$ \frac{-b \pm \sqrt{b^2-4ac}}{2a}]
+
+[#* HashTag]
+ `#HashTag`
+ #cosense
+
+[#* 引用]
+ > 行頭に`>`を書くと引用になります
+
+[#* コード]
+ バッククオート`\``で囲む
+  `function() {  return \`hello\` }`
+
+[#* コードブロック]
+ code:hello.js
+  function () {
+    alert(document.location.href)
+    console.log("hello")
+    // コメントも書けるぞ
+  }
+
+[#* 表 (テーブル)]
+ `table:テーブル名` の後、インデントして tab 区切り
+	table:テーブルの例
+	 abc	def
+	 12345	6789
+	 長い文字列	短い文字列
+ table:長いテーブルの例
+  abc	def	kfk	kfk	kfk	abc
+  12345	6789	1000000	1000000	1000000	12345
+  長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列	短い文字列	これはすごい	これはすごい	これはすごい	長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列長い長い文字列
+
+[#* コマンドライン]
+ 行頭に`$`もしくは`%`
+ $ git reset --hard HEAD^
+ % cp a.txt b.txt
+
+[#* 区切り線]
+	`[/icons/hr.icon]`を挿入
+[/icons/hr.icon]
+
+
+[#** Tampermonkey を用いた高度な追加機能]
+
+[#* X（Twitter）のポスト埋め込み表示]
+ ポストの URL だけを行に書くと、Tampermonkey によりウィジェットが表示される
+  `https://x.com/jack/status/20`
+https://x.com/OpenAI/status/2075686461693898868?s=20
+
+ リプライ元を表示しない場合は、URL のクエリパラメータに `conversation=none` を指定する
+  `https://x.com/example/status/1234567890?conversation=none`
+
+https://x.com/OpenAI/status/2075274276849226204?s=20
+
+https://x.com/OpenAI/status/2075274276849226204?conversation=none
+
+[#* Github の埋め込み表示]
+[* Github の埋め込み表示に対応している URL]
+	1. ファイル全体
+		`https://github.com/octocat/Spoon-Knife/blob/main/README.md`
+https://github.com/octocat/Spoon-Knife/blob/main/README.md
+
+	2. 行範囲
+ 	`https://github.com/octocat/Spoon-Knife/blob/main/README.md#L1-L3`
+https://github.com/octocat/Spoon-Knife/blob/main/README.md#L1-L3
+
+	3. 単一行
+ 	`https://github.com/octocat/Spoon-Knife/blob/main/README.md#L3`
+https://github.com/octocat/Spoon-Knife/blob/main/README.md#L3

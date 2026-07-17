@@ -1,0 +1,992 @@
+[***# Cosense Zenn Style]
+[Zenn https://zenn.dev/zenn/articles/markdown-guide] 風の見た目を Cosense (Scrapbox) で再現することを目指した UserCSS, UserScript, (Tampermonkey)
+
+[**# UserCSS]
+
+[*# 外観]
+code:style.css
+ body{
+   background-color:#edf2f7;
+ }
+ .status-bar>div {
+   background-color: #f1f5f9;
+ }
+ .grid li.page-list-item a .header {
+   border-top: #d6e3ed solid 10px;
+ }
+ .related-page-list .grid li {
+     card-title-bg: #f1f5f9;
+ }
+ 
+
+code: style.css
+ .col-page {
+     max-width: 1280px;
+ }
+ 
+ .editor {
+     font-size: 18px;
+     line-height: 32px;
+     letter-spacing: 0.5px;
+ }
+ 
+
+[*# マーカー強調]
+	`[! hoge moga]` → [! hoge moga]
+	`[!* hoge moga]` → [!* hoge moga]
+	`[[hoge moga]]` → [[hoge moga]]
+code:style.css
+ .deco-\! {
+     color: #2e445c;
+     background-color: #fff6e4; /* 黄背景 */
+     padding: 0.1em 0.2em 0.1em 0.2em;
+ }
+ .level-1 .deco-\! {
+     color: #fff; /* 白文字 */
+     background-color: #ff6868; /* 赤背景 */
+     padding: 0.1em 0.2em 0.1em 0.2em;
+ }
+ 
+ /* 二重括弧は小見出しにしたい */
+ .line strong:not([class]) {
+     background-color: #ecf5ff;
+     padding: 0.2em 0.5em;
+ }
+ 
+
+[*# 見出し]
+code:style.css
+ :root {
+ 	--left-total: 18px;
+ }
+ .level-5 .deco-\# {
+		display: inline-block;
+ 	width: 100%;
+ 	margin: .25em 0;
+ 	padding: .25em 0;
+ 	padding-left: calc(var(--left-total) - 9px);
+ 	border-left: 9px solid #0f83fd;
+ 	border-bottom: 1px solid #d6e3ed;
+ }
+ .level-4 .deco-\# {
+		display: inline-block;
+ 	width: 100%;
+ 	margin: .25em 0;
+ 	padding: .25em 0;
+ 	padding-left: calc(var(--left-total) - 8px);
+  	border-left: 8px solid #3ea8ff;
+ 	border-bottom: 1px solid #d6e3ed;
+ }
+ .level-3 .deco-\# {
+		display: inline-block;
+ 	width: 100%;
+ 	margin: .25em 0;
+ 	padding: .25em 0;
+  	padding-left: calc(var(--left-total) - 7px);
+ 	border-left: 7px solid #bfdcff;
+ 	border-bottom: 1px solid #d6e3ed;
+ }
+ .level-2 .deco-\# {
+		display: inline-block;
+ 	width: 100%;
+ 	margin: .25em 0;
+ 	padding: .25em 0;
+  	padding-left: calc(var(--left-total) - 6px);
+ 	border-left: 6px solid #e0efff;
+ }
+ .level-1 .deco-\# {
+		display: inline-block;
+ 	width: 100%;
+ 	margin: .25em 0;
+		padding: .25em 0;
+	 	padding-left: calc(var(--left-total) - 6px);
+		border-left: 5px solid #edf2f7;
+	}
+
+[*# チェックボックス] 
+ `[_]` -> [_]
+ `[x]` -> [x]
+code:style.css
+ /* チェックボックスになるタグ v2 Font Awesome版 */
+  .line:not(.cursor-line) a[href='./_']:not(.icon) span,
+  .line:not(.cursor-line) a[href='./x']:not(.icon) span {
+    display: inline-block; width: 0; text-indent: -9999px }
+  .line:not(.cursor-line) a[href='./_']:not(.icon)::after,
+  .line:not(.cursor-line) a[href='./x']:not(.icon)::after {
+    display: inline-block; min-width: 1.15em; padding-left: 1px;
+    font-family: 'Font Awesome 5 Free'; font-weight: 400;
+    font-size: 120%; text-align: center; vertical-align: middle }
+  .line:not(.cursor-line) a[href='./_']:not(.icon)::after { content: '\f0c8'; color: #3ea8ff }
+  .line:not(.cursor-line) a[href='./x']:not(.icon)::after { content: '\f14a'; color: #0f83fd }
+
+[*# 外部リンクに対するアイコン]
+code:style.css
+ .line a.link:not(.icon)::before { font-family:'Font Awesome 5 Free'; content: ''; display: inline-block }
+
+[*#  カーソル迷子対策]
+code:style.css
+  .cursor-line {
+    background-color: #3ea8ff14;
+  }
+
+[*#  カーソル点滅]
+code:style.css
+ .cursor {
+   animation: blink 1s infinite;
+ }
+ @keyframes blink {
+   0% { opacity: 0; }
+   50% { opacity: 0; }
+   51% { opacity: 1; }
+   100% { opacity: 1;}
+ }
+ 
+ /* テキストカーソル（キャレット）の色 */
+  body {
+    --caret-color: #3ea8ff;
+    caret-color: var(--caret-color);
+  }
+  
+  /* コードブロック内の色と同化しないよう、テキストカーソルの背景に白色を適用 */
+  .cursor {
+    background-color: white !important;
+  }
+
+[*# 箇条書きスタイル変更]
+code:style.css
+ .app .line .indent-mark .dot {
+   height: .2em; width: .4em; border-radius: 25%;
+   background-color: rgba(101,113,123,.55) }
+ .app:not(.presentation) .line .indent-mark .dot { top: auto; bottom: 0 }
+
+[*# 引用]
+code:style.css
+ /*
+  * Zenn 風の引用表示。
+  * Cosense の引用構造には手を加えず、色・左罫線・最小限の余白だけを変更する。
+  */
+ .line.quote-line .quote {
+   box-sizing: border-box;
+   color: #65717b;
+   background-color: transparent;
+   border-left: solid 3px #8f9faa;
+   border-radius: 0;
+   padding: 2px 0 2px 0.7em;
+   font-size: 0.97em;
+ }
+ 
+ /* 閲覧時だけ引用記号を隠し、編集中は記法を確認できるようにする */
+ .line:not(.cursor-line) .quote > .tag:has(+ *) {
+   display: none;
+ }
+ 
+ /* 編集中の引用行を薄く強調する */
+ .line.cursor-line.quote-line .quote {
+   background-color: #f5f9fc;
+ }
+
+[*# GitHub ファイル埋め込み]
+ GitHub 埋め込みは、Cosense の CSP 制約を避けるため、Tampermonkey 用の `cosense_github_embed_tampermonkey.user.js` 側で CSS と JavaScript を管理する。
+ マイページの UserScript から GitHub Raw への `fetch()` は行わない。
+
+[*# X（Twitter）ポスト埋め込み]
+ X（Twitter）ポスト埋め込みは、公式の `widgets.js` を利用する Tampermonkey 用の `cosense_x_post_embed_tampermonkey.user.js` 側で CSS と JavaScript を管理する。
+ ポスト URL だけの行を対象とし、通常はリプライ元を含め、`?conversation=none` の指定時だけリプライ元を非表示にする。
+
+[*# コードブロック・インラインコード]
+code:style.css
+ /*
+  * Zenn 風のコード表示。
+  * Cosense の編集構造には手を加えず、色・書体・最小限の余白だけを変更する。
+  */
+ .line code {
+   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace,
+     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+   -webkit-font-smoothing: antialiased;
+ }
+ 
+ /* インラインコード */
+ .line code:not(.code-start):not(.code-body) {
+   color: #2e445c;
+   background-color: #edf2f7;
+   border-radius: 4px;
+   padding: 0.15em 0.35em;
+   margin: 0 0.1em;
+   font-size: 0.85em;
+   vertical-align: 0.08em;
+ }
+ 
+ /* コードブロック本体 */
+ .line span.code-block {
+   background-color: transparent;
+ }
+ 
+ .line span.code-block span.indent {
+   background-color: #1a2638;
+ }
+ 
+ /* 左側のインデント領域をコード行の高さまで塗る */
+ .line span.code-block .indent-mark {
+   height: 100%;
+ }
+ 
+ .line span.code-block .pad:not(.code-block-margin) {
+   height: 100%;
+   background-color: #1a2638;
+ }
+ 
+ .line span.code-block span.code-block-margin {
+   background-color: transparent;
+ }
+ 
+ .line span.code-block code.code-body {
+   color: #fff;
+   background-color: transparent;
+   font-size: 0.9em;
+ }
+ 
+ /* code:ファイル名 / code:言語名 の行 */
+ .line span.code-block code.code-start {
+   display: block;
+   width: 100%;
+   box-sizing: border-box;
+   color: rgba(255, 255, 255, 0.9);
+   background-color: #323e52;
+   padding: 0.1em 0.55em;
+   font-size: 0.78em;
+   font-weight: 600;
+ }
+ 
+ /* Cosense 標準のタイトル色・背景が内側に残るのを防ぐ */
+ .line span.code-block code.code-start .code-block-start,
+ .line span.code-block code.code-start .code-block-start * {
+   color: rgba(255, 255, 255, 0.9) !important;
+   background-color: transparent !important;
+ }
+ 
+ /* コードブロック内のインデント記号を控えめにする */
+ .line span.code-block .indent-mark .dot {
+   background-color: rgba(255, 255, 255, 0.25);
+ }
+ 
+ /* Zenn に近いシンタックスハイライト */
+ .line span.code-block .hljs-comment,
+ .line span.code-block .hljs-quote,
+ .line span.code-block .hljs-meta {
+   color: #94a1b3;
+ }
+ 
+ .line span.code-block .hljs-keyword,
+ .line span.code-block .hljs-selector-tag,
+ .line span.code-block .hljs-selector-class,
+ .line span.code-block .hljs-selector-id,
+ .line span.code-block .hljs-attribute,
+ .line span.code-block .hljs-deletion {
+   color: #ff8fa3;
+ }
+ 
+ .line span.code-block .hljs-string,
+ .line span.code-block .hljs-number,
+ .line span.code-block .hljs-literal,
+ .line span.code-block .hljs-regexp,
+ .line span.code-block .hljs-symbol,
+ .line span.code-block .hljs-bullet {
+   color: #ffc56d;
+ }
+ 
+ .line span.code-block .hljs-title,
+ .line span.code-block .hljs-section,
+ .line span.code-block .hljs-function,
+ .line span.code-block .hljs-property,
+ .line span.code-block .hljs-tag,
+ .line span.code-block .hljs-name {
+   color: #38c7ff;
+ }
+ 
+ .line span.code-block .hljs-addition {
+   color: #b4ff9b;
+ }
+	
+ 
+ /* コードブロック編集中のカーソルと現在行を見やすくする */
+ .line.cursor-line span.code-block span.indent,
+ .line.cursor-line span.code-block .pad:not(.code-block-margin) {
+   background-color: #25364d;
+ }
+ 
+ .line.cursor-line span.code-block code.code-start {
+   background-color: #3b4b63;
+ }
+ 
+ /* 暗いコード背景でも埋もれない、高コントラストなテキストカーソル */
+ .line.cursor-line:has(.code-block) .cursor {
+   background-color: #ffd166 !important;
+   box-shadow:
+     0 0 0 1px rgba(26, 38, 56, 0.95),
+     0 0 5px rgba(255, 209, 102, 0.8);
+ }
+ 
+ body:has(.line.cursor-line .code-block) #text-input {
+   caret-color: #ffd166 !important;
+ }
+
+[*# 表（テーブル）]
+ 各列で本文幅を均等に分け、列数が多い場合だけ文字と余白を少し小さくする方法を実装している
+ 	（デフォルトの場合、本文表示範囲からはみ出してしまう場合があるという問題があったので、これを防ぐ実装にしている）
+ 		[**** [https://i.gyazo.com/ecf612f1c1d3fcccfe51119fd46a09bb.png]]
+		これにより、例えば、4列の場合は各列が本文幅の約4分の1、6列なら約6分の1となり、固定 16em のように列数に比例して表全体が横へ伸びなくなる
+code:style.css
+ /*
+  * Zenn 風の表表示。
+  *
+  * 本文描画エリアの幅を各列で均等に分け、
+  * 列数が増えた場合は文字と余白を少し小さくする。
+  */
+ .table-block {
+   width: 100%;
+   max-width: 100%;
+	
+   font-size: 0.95em;
+   line-height: 1.5;
+ }
+	
+	
+ /*
+  * 表の行。
+  *
+  * 編集中の行へレイアウト変更を適用すると、
+  * Cosense のカーソル移動へ影響する可能性があるため、
+  * 非編集行だけを対象にする。
+  */
+ .line:not(.cursor-line) .table-block-row {
+   display: flex !important;
+   align-items: stretch !important;
+	
+   width: 100% !important;
+   max-width: 100% !important;
+   height: auto !important;
+ }
+	
+	
+ /*
+  * 本文幅をすべてのセルで均等に分ける。
+  */
+ .line:not(.cursor-line) .table-block .cell {
+   display: flex !important;
+   align-items: flex-start;
+	
+   flex: 1 1 0 !important;
+   width: 0 !important;
+   min-width: 0 !important;
+   max-width: none !important;
+	
+   box-sizing: border-box;
+   vertical-align: top;
+ }
+	
+	
+ /*
+  * セル内テキストを自動で折り返す。
+  */
+ .line:not(.cursor-line) .table-block .cell-text {
+   display: block;
+   box-sizing: border-box;
+	
+   width: 100%;
+   min-width: 0;
+   max-width: 100%;
+	
+   white-space: normal;
+   overflow-wrap: anywhere;
+   word-break: normal;
+   text-wrap: pretty;
+	
+   vertical-align: top;
+ }
+	
+	
+ /*
+  * 4列以上では文字と余白を少しコンパクトにする。
+  */
+ .line:not(.cursor-line)
+ .table-block-row:has(> .cell:nth-child(4))
+ .cell {
+   padding: 0.4rem;
+ }
+	
+ .line:not(.cursor-line)
+ .table-block-row:has(> .cell:nth-child(4))
+ .cell-text {
+   font-size: 0.9em;
+   line-height: 1.45;
+ }
+	
+	
+ /*
+  * 6列以上ではさらにコンパクトにする。
+  */
+ .line:not(.cursor-line)
+ .table-block-row:has(> .cell:nth-child(6))
+ .cell {
+   padding: 0.3rem;
+ }
+	
+ .line:not(.cursor-line)
+ .table-block-row:has(> .cell:nth-child(6))
+ .cell-text {
+   font-size: 0.82em;
+   line-height: 1.4;
+ }
+	
+	
+ /* table:テーブル名 の表示を控えめにする */
+ .table-block .table-block-start {
+   color: #65717b;
+   background-color: transparent;
+   padding: 0.2em 0.1em 0.35em;
+   font-size: 0.85em;
+   font-weight: 600;
+ }
+	
+ .table-block .table-block-start a {
+   color: #65717b;
+ }
+	
+	
+ /* Cosense 標準の列ごとの背景色を白にそろえる */
+ .table-block .cell:nth-child(odd),
+ .table-block .cell:nth-child(even) {
+   color: inherit;
+   background-color: #fff;
+ }
+	
+	
+ /* 各セルの余白と境界線 */
+ .table-block .cell {
+   box-sizing: border-box;
+   padding: 0.5rem;
+	
+   border-right: solid 1px #d6e3ed;
+   border-bottom: solid 1px #d6e3ed;
+ }
+	
+ .table-block .cell:first-child {
+   border-left: solid 1px #d6e3ed;
+ }
+	
+	
+ /* 4列以上では、上の通常余白を上書きする */
+ .line:not(.cursor-line)
+ .table-block-row:has(> .cell:nth-child(4))
+ .cell {
+   padding: 0.4rem;
+ }
+	
+	
+ /* 6列以上では、上の4列用余白を上書きする */
+ .line:not(.cursor-line)
+ .table-block-row:has(> .cell:nth-child(6))
+ .cell {
+   padding: 0.3rem;
+ }
+	
+	
+ /* 先頭行を見出し行として表示する */
+ .line:has(.table-block-start) + .line .table-block .cell,
+ .section-title + .line .table-block .cell {
+   border-top: solid 1px #d6e3ed;
+   background-color: #edf2f7;
+   font-weight: 700;
+ }
+	
+	
+ /* 編集中の行がセル背景に隠れないようにする */
+ .line.cursor-line .table-block .cell {
+   background-color: #f0f7ff;
+ }
+
+[*# ヘッダーメニュー]
+code:style.css
+ :root {
+   --header-muted-color: rgb(125 139 149);
+ }
+	
+ .navbar {
+   /* project name */
+   --navbar-title-color: var(--header-muted-color);
+	
+   /* project icon の隣にある下向き矢印 */
+   --navbar-icon-color: var(--header-muted-color);
+   --navbar-icon-hovered-color: var(--header-muted-color);
+   --navbar-icon-active-color: var(--header-muted-color);
+	
+   /* 検索アイコン */
+   --search-form-icon-color: var(--header-muted-color);
+   --search-form-icon-focus-color: var(--header-muted-color);
+	
+   border-bottom: solid #d6e3ed 0.5px;
+   background-color: rgba(255, 255, 255, 0.94);
+ }
+	
+ /*
+  * project icon の SVG には色を指定しない。
+  * アイコンが本来持っている色と濃淡をそのまま表示する。
+  */
+	
+ .search-form .form-group input {
+   background-color: #f1f5f9;
+   border: solid #d6e3ed 0.5px;
+ }
+	
+ .new-button {
+   background-color: #3ea8ff;
+   transition: background-color 0.15s ease;
+ }
+	
+ .new-button:hover {
+   background-color: #1283fd !important;
+ }
+	
+ .new-button div {
+   background-color: #fff !important;
+ }
+	
+ /* モバイル表示の検索ボタン */
+ a.mobile-search-toggle {
+   color: var(--header-muted-color) !important;
+ }
+
+
+[**# UserScript]
+[#* GitHub ファイル埋め込み]
+ Cosense の CSP で GitHub Raw への通信が拒否されるため、この機能は Tampermonkey 用 userscript で実行する。
+
+[#* X（Twitter）ポスト埋め込み]
+ X（Twitter）の公式ウィジェットを Cosense 上へ安定して表示するため、この機能は Tampermonkey 用 userscript で実行する。
+
+[#* ページ内目次の自動生成]
+	from: [/daiiz/ページの見出しを作るUserScript]
+code:script.js
+ const indexes = function () {
+   scrapbox.PageMenu('見出し').removeAllItems()
+   for (let line of scrapbox.Page.lines) {
+     if (!line.section.start || line.title) continue
+     const image = line.nodes && getIconUrl(line.nodes)
+     const noIcon = !!image
+     const title = line.nodes ? renderPlainText(line.nodes, {noIcon}) : line.text
+     const onClick = () => location.hash = line.id
+     scrapbox.PageMenu('見出し').addItem({title, image, onClick})
+   }
+ }
+ 
+ function renderPlainText (node, options) {
+   if (node instanceof Array) return node.map(node => renderPlainText(node, options)).join('')
+   if (typeof node === 'string') return node
+   switch (node.type) {
+     case 'icon':
+     case 'strong-icon':
+       return options.noIcon ? ' ' : node.unit.page
+     case 'hashTag':
+       return ''
+   }
+   return renderPlainText(node.children, options)
+ }
+ 
+ function getIconUrl (node) {
+   if (/icon/.test(node.type)) {
+     return `/api/pages/${node.unit.project || scrapbox.Project.name}/${node.unit.page}/icon`
+   }
+   if (node instanceof Array) {
+     return node.map(getIconUrl).find(img => img)
+   }
+   return null
+ }
+ 
+ scrapbox.PageMenu.addMenu({
+   title: '見出し',
+   image: 'https://gyazo.com/da0408108eda84e56a587630be5e4524/raw',
+   onClick: indexes
+ })
+
+[#* Emoji (絵文字)]
+	from: [/yutaro/emoji selector]
+code:script.js
+ const Asearch = (function() {
+     var INITPAT, INITSTATE, MAXCHAR;
+     INITPAT = 0x80000000; 
+     MAXCHAR = 0x100; 
+     INITSTATE = [INITPAT, 0, 0, 0];
+ 
+     Asearch.prototype.isupper = function(c) {
+       return (c >= 0x41) && (c <= 0x5a);
+     };
+ 
+     Asearch.prototype.islower = function(c) {
+       return (c >= 0x61) && (c <= 0x7a);
+     };
+ 
+     Asearch.prototype.tolower = function(c) {
+       if (this.isupper(c)) {
+         return c + 0x20;
+       } else {
+         return c;
+       }
+     };
+ 
+     Asearch.prototype.toupper = function(c) {
+       if (this.islower(c)) {
+         return c - 0x20;
+       } else {
+         return c;
+       }
+     };
+ 
+     function Asearch(source) {
+       var c, i, j, len, mask, ref, ref1;
+       this.source = source;
+       this.shiftpat = [];
+       this.epsilon = 0;
+       this.acceptpat = 0;
+       mask = INITPAT;
+       for (c = i = 0, ref = MAXCHAR; 0 <= ref ? i < ref : i > ref; c = 0 <= ref ? ++i : --i) {
+         this.shiftpat[c] = 0;
+       }
+       ref1 = this.unpack(this.source);
+       for (j = 0, len = ref1.length; j < len; j++) {
+         c = ref1[j];
+         if (c === 0x20) {
+           this.epsilon |= mask;
+         } else {
+           this.shiftpat[c] |= mask;
+           this.shiftpat[this.toupper(c)] |= mask;
+           this.shiftpat[this.tolower(c)] |= mask;
+           mask >>>= 1;
+         }
+       }
+       this.acceptpat = mask;
+       return this;
+     }
+ 
+     Asearch.prototype.state = function(state, str) {
+       var c, i, i0, i1, i2, i3, len, mask, ref;
+       if (state == null) {
+         state = INITSTATE;
+       }
+       if (str == null) {
+         str = '';
+       }
+       i0 = state[0];
+       i1 = state[1];
+       i2 = state[2];
+       i3 = state[3];
+       ref = this.unpack(str);
+       for (i = 0, len = ref.length; i < len; i++) {
+         c = ref[i];
+         mask = this.shiftpat[c];
+         i3 = (i3 & this.epsilon) | ((i3 & mask) >>> 1) | (i2 >>> 1) | i2;
+         i2 = (i2 & this.epsilon) | ((i2 & mask) >>> 1) | (i1 >>> 1) | i1;
+         i1 = (i1 & this.epsilon) | ((i1 & mask) >>> 1) | (i0 >>> 1) | i0;
+         i0 = (i0 & this.epsilon) | ((i0 & mask) >>> 1);
+         i1 |= i0 >>> 1;
+         i2 |= i1 >>> 1;
+         i3 |= i2 >>> 1;
+       }
+       return [i0, i1, i2, i3];
+     };
+ 
+     Asearch.prototype.match = function(str, ambig) {
+       var s;
+       if (ambig == null) {
+         ambig = 0;
+       }
+       s = this.state(INITSTATE, str);
+       if (!(ambig < INITSTATE.length)) {
+         ambig = INITSTATE.length - 1;
+       }
+       return (s[ambig] & this.acceptpat) !== 0;
+     };
+ 
+     Asearch.prototype.unpack = function(str) {
+       var bytes, c, code, i, len, ref;
+       bytes = [];
+       ref = str.split('');
+       for (i = 0, len = ref.length; i < len; i++) {
+         c = ref[i];
+         code = c.charCodeAt(0);
+         if (code > 0xFF) {
+           bytes.push((code & 0xFF00) >>> 8);
+         }
+         bytes.push(code & 0xFF);
+       }
+       return bytes;
+     };
+ 
+     return Asearch;
+ 
+   })();
+ 
+ 
+ 
+ const projectName = scrapbox.Project.name;
+ let emojis = [];
+ const box = $('<div>').addClass('form-group').css("position", "absolute");
+ const container = $('<div>').addClass('dropdown');
+ box.append(container);
+ let items = $('<ul>').addClass('dropdown-menu');
+ container.append(items);
+ $('#editor').append(box);
+ 
+ fetch(`/api/pages/${projectName}?limit=10000`, { credentials: 'same-origin'})
+ 	.then( res => res.text())
+     .then( text => {
+     	const data = JSON.parse( text );
+      	const pages = data.pages;
+       	pages.filter( page => (page.image !== null && page.title.match(/^[\w\s\-\+]+$/)))
+      		.forEach( page => {
+        			emojis.push({
+        				name: page.title,
+            			path: page.title,
+           			icon: `/api/pages/${projectName}/${page.title}/icon`,
+             	})
+              })
+     })
+ 
+ 
+ scrapbox.PageMenu.addMenu({
+     title: 'emoji',
+     image: 'https://i.gyazo.com/49db853b2f42e1e26d07e3f982eae2f4.png'
+ })
+ scrapbox.PageMenu('emoji').addItem({
+     title: "load emojis from /emoji",
+     onClick: () => {
+     	 fetch('/api/pages/emoji?limit=10000')
+       	.then( res => res.text())
+        	.then( text => {
+         	const data = JSON.parse( text );
+           	const pages = data.pages;
+            	pages.filter( page => (page.image !== null && page.title.match(/^[\w\s\-\+]+$/)))
+             		.forEach( page => {
+               			for( let emoji of emojis ) {
+                           if( emoji.name === page.title )return;
+                     	}
+               			emojis.push({
+                 			name: page.title,
+                    			path: '/emoji/' + page.title,
+                      		icon: `/api/pages/emoji/${page.title}/icon`,
+                 		})
+               		})
+            })
+     }
+ })      		
+ 
+  // TODO: 様々な文字列が来る場合を考慮する
+  
+  const taberareloo = ( word, list ) => {
+  	const targetWord = word.replace(':', '');
+  	const regStr = targetWord.split('').reduce( (pre, cur) => pre + cur + '.*' ).replace('+', '\\+');
+   	const reg = RegExp(regStr,'i');
+    	return list.filter( item => item.name.match(reg));
+  }
+  
+  const asearched = ( word, list ) => {
+  	const targetWord = word.replace(':', '');
+   	const a = new Asearch( targetWord );
+     const limitCount = Math.floor( targetWord.length/ 4 ) + 1;
+     let result = [];
+     
+     for(let i = 0; i <= limitCount; i++){
+     	let matched = list.filter( item => a.match( item.name, i));
+      	let notExisted = matched.filter( item => {
+       		for( let r of result){
+         		if(r.name === item.name){
+           			return false;
+           		}
+         	}
+          	return true;
+       	})
+        	result = [ ...result, ...notExisted];
+     }
+     
+    	return result;
+  }
+  
+  const fizzSearch = ( word, list ) => {
+  	const a = asearched( word, list );
+   	const b = taberareloo( word, list );
+    	const c = b.filter( item => {
+     	for( let r of a ){
+      		if( r.name == item.name){
+        			return false;
+        		}
+      	}
+       	return true;
+     })
+    	return [...a, ...c];
+  }
+  
+ 
+  let stack = "";
+  const editor = $('#editor');
+  
+  const open  = () => container.addClass("open"); 
+  const close = () => {
+  	stack = "";
+  	container.removeClass("open");
+  }
+  
+  const replaceText = (text, cursor, emojiPath) => {
+  	cursor.focus();
+     setTimeout(()=>{
+     	for(let i = 0; i < text.length; i++){
+         	var ke1 = document.createEvent("Events");
+          	ke1.initEvent("keydown", true, true);
+          	ke1.keyCode = ke1.which = 8; // Backspace
+          	cursor.dispatchEvent(ke1);
+         }
+         document.execCommand('insertText',null, `[${emojiPath}.icon]` );
+         close();
+     }, 50)
+  }
+  
+  editor.keydown( e => {
+  	const key = e.key;
+   	if(key === undefined ) return;
+  	if( stack === "" && key !== ":"){
+   		close();	
+   		return
+     };
+ 
+     if ($('.cursor-line').text().trim() == 'code:'
+        		|| $('.cursor-line .code-block').length == 1) {
+        close()
+        return;
+     }
+     
+     if( key === ':' && stack.length !== 0){
+     	let name = stack.replace(':', '');
+     	for(let emoji of emojis){
+      		if( emoji.name === name ){
+        			let cursor = $('#text-input')[0];
+        			replaceText(stack + ":", cursor, emoji.path);
+           		return;
+        		}
+      	}
+       	close()
+        	return;
+     }
+ 	const cursor = $('#text-input')[0];
+     if( key.match(/^[\w\s\-\:\+]$/) ){
+     	stack += e.key;
+      	let focused = $(':focus');
+       	if(focused.is(items.find('li > a'))){
+      		cursor.focus();  		
+        	}
+     }
+   
+     if( stack.length === 2 ){
+     	if( key === " " ){
+      		stack = "";
+        		return;
+      	}
+     	open();
+      }
+     
+     switch(key){
+     	case 'Backspace':
+      		stack = stack.slice(0, stack.length - 1);
+        		if(stack.length === 0){
+          		close();
+            		return;
+          	}
+        		break;
+         case 'ArrowUp':
+         	let focusedUp = $(':focus');
+          	if( focusedUp.is(items.find('li > a').eq(0)) ){
+           		e.stopPropagation();
+             	cursor.focus();
+           	}else if( !focusedUp.is(items.find('li > a')) ){
+            		close();
+              	return;
+             }
+          	break;
+         case 'ArrowDown':
+         	let focusedDown = $(':focus');
+         	if( !focusedDown.is(items.find('li > a'))) {
+         		e.stopPropagation();
+           		e.preventDefault();
+          		items.find("li > a").eq(0).focus();
+             }
+             break;
+         case 'Escape':
+         case 'ArrowLeft':
+         case 'ArrowRight': 
+         case 'Home':
+         case 'End':
+         case 'PageUp':
+         case 'PageDown':
+          	close();
+           	break;
+         
+         case 'Enter':
+         	if( stack.length === 1 ){
+          		close();
+            		break;
+          	}
+           	let focused = $(':focus');
+           	if(!focused.is(items.find('li > a'))){
+            		e.stopPropagation();
+                 e.preventDefault();
+           		items.find('li > a').eq(0).click();
+             }
+           break;
+     }
+     
+     if( stack.length <= 1 || !key.match(/^[\w\s\:\-\+]$|Backspace/)) return;
+     const matchedEmoji = fizzSearch(stack, emojis)
+     if( matchedEmoji.length === 0){
+     	close();
+      	return;
+     }
+     
+     const newItems = $('<ul>').addClass('dropdown-menu');
+     
+     matchedEmoji.forEach( ( emoji, index) => {
+       if( index > 30 ) return;
+       const li = $('<li>').addClass('dropdown-item');
+       const a  = $('<a>').attr("tabindex", "0");
+       const img = $('<img>').attr("src", emoji.icon)
+          .addClass("icon").css({ height: "17px", float: "left"});
+       const nameTag = $('<div>').text("  :" + emoji.name + ":");
+       a.append(img);
+       a.append(nameTag);
+       li.append(a);
+       newItems.append(li);
+ 	
+       a.on('click', () => {
+        	cursor.focus();
+         replaceText(stack, cursor, emoji.path);
+       })
+       
+       a.on('keypress', ev => {
+       	 if(ev.key === "Enter"){
+         	ev.preventDefault();
+          	ev.stopPropagation();
+          	replaceText(stack, cursor, emoji.path);
+          }
+       })
+ 	})
+  	
+   	items.replaceWith(newItems);
+   	items = newItems;
+     let css = {};
+    	cursor.style.cssText.split(';').filter( text => text !== '' )
+     	.forEach( text => {
+      		const props = text.split(':').map( text => text.replace(' ', '').replace('px', ''));
+        		css[props[0]] = props[1];
+     	});
+     
+   	box.css({
+    		top: `${parseInt(css.top) + parseInt(css.height) + 3}px`,
+      	left: `${css.left}px`,
+    	});
+  })
