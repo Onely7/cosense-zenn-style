@@ -3570,7 +3570,7 @@ code:script.js
      return {title, out, kinds}
    }
  
-   // 空行を整える（2 つ以上続く空行・見出しの直後・箇条書きの項目の間の空行を除き、コードブロックや表のあとに必要な空行を入れる）
+   // 空行を整える（2 つ以上続く空行・見出しの直後・箇条書きの項目の間の空行を除き、見出しの前などに空行を入れる）
    const tidyLines = (out, kinds) => {
      const lines = []
      let previousKind = null
@@ -3586,6 +3586,9 @@ code:script.js
        const isHeader = isBlock && /^\s*(?:code|table):/.test(line)
        if (pendingBlank) {
          if (previousKind !== 'heading' && !(previousKind === 'list' && kind === 'list')) lines.push('')
+       } else if (kind === 'heading' && lines.length && previousKind !== 'heading') {
+         // Markdown では見出しの前に空行がなくても間を空けて表示されるため、見出しの前には空行を入れる
+         lines.push('')
        } else if (blockIndent >= 0 && (!isBlock || isHeader) && indentWidth(line) > blockIndent) {
          lines.push('')
        }
@@ -3620,7 +3623,9 @@ code:script.js
        return false
      })
  
-     const blocks = convertBlocks(source, {definitions, tableName: 'table', takeTitle: !title})
+     // 名前のない表は、日本語の文書では「表」、それ以外では「table」という名前にする
+     const tableName = /[\u3040-\u30ff\u3400-\u9fff]/.test(text) ? '表' : 'table'
+     const blocks = convertBlocks(source, {definitions, tableName, takeTitle: !title})
      return {title: title || blocks.title || fallbackTitle, lines: tidyLines(blocks.out, blocks.kinds)}
    }
  
