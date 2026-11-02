@@ -26,11 +26,11 @@ Paste `main_user_css_script_for_mypage.txt` into your My Page to customize the f
 - A frosted-glass header fixed to the top of the screen
 - A button that switches between light and dark mode
 - Visibility of the active line and a non-blinking text cursor
-- In-page heading menu (headings listed with their hierarchy)
-- A sticky table of contents next to the page on wide screens (opened from the menu button in the header on phones)
+- A sticky table of contents next to the page on wide screens (opened from the menu button in the header on tablets and phones)
 - Copying links to headings
 - Emoji search and insertion
 - Downloading pages as Cosense text (`.txt`) or Markdown (`.md`)
+- A choice of how to start a new page (blank page, template, or importing a `.txt` or `.md` file)
 - Cards for X (Twitter) posts (author, text, and images)
 - Support for Cosense dark themes
 
@@ -60,7 +60,7 @@ The basic customizations require:
 - A Cosense account
 - A My Page in the project where you want to apply the customizations
 - Permission to enable UserScript
-- A browser that supports relatively recent CSS features such as `:has()`
+- A browser that supports relatively recent CSS features such as `:has()` and container queries (`@container`)
 
 The optional embed features additionally require:
 
@@ -108,7 +108,7 @@ code:style.css
 code:script.js
 ```
 
-`code:style.css` changes the appearance of Cosense. `code:script.js` adds behaviors such as the heading menu and emoji suggestions. Paste the file as-is so that the code block names and indentation remain intact.
+`code:style.css` changes the appearance of Cosense. `code:script.js` adds behaviors such as the table of contents and emoji suggestions. Paste the file as-is so that the code block names and indentation remain intact.
 
 ### 4. Check the basic appearance
 
@@ -139,9 +139,9 @@ Add `#` to the bold notation, as in `[*# Heading]`, to display a line as a headi
 
 ### Table of contents and heading links
 
-- Use **見出し** (Headings) in the page menu on the right to jump to a heading on the page. Headings containing `#` are listed with a hierarchy based on the number of `*` characters. On pages without such headings, lines that consist only of bold text, such as `[** Heading]`, are used instead. On screens 767px wide or narrower, **見出し** is not added to the page menu because the table of contents opens from the menu button in the header.
+- The table of contents lists headings containing `#` with a hierarchy based on the number of `*` characters. On pages without such headings, lines that consist only of bold text, such as `[** Heading]`, are used instead.
 - On screens 1300px or wider, pages with two or more headings show a table of contents to the right of the page. The current heading is highlighted as you scroll. The table of contents takes up at most about 75% of the screen height and scrolls on its own when it is longer.
-- On screens 767px wide or narrower, the same table of contents opens from the menu button (☰) to the right of your icon in the header. Choose a heading to jump to it, and tap outside the table of contents or press `Esc` to close it.
+- When the table of contents is not shown next to the page (for example, on tablets and phones with screens 1299px wide or narrower), the same table of contents opens from the menu button (☰) to the right of your icon in the header. Choose a heading to jump to it, and tap outside the table of contents or press `Esc` to close it.
 - When you hover over a heading (or tap it on a phone), a button appears that copies a link to that heading (the page URL with the line ID).
 
 ### Emoji suggestions
@@ -184,6 +184,36 @@ The Markdown conversion mainly works as follows:
 For bold and other emphasis in Japanese text, a space is added outside the markers only where CommonMark would otherwise not treat the text as emphasis, such as when a bracket like 「 or `[` comes right inside the markers.
 
 On narrow screens, Cosense may show only some of the extension buttons in the page menu. In that case, use the download buttons at the bottom of the table of contents that opens from the menu button (☰) in the header.
+
+### Starting a new page
+
+On a page without body text (such as a page you have just created with **+**), a panel for choosing how to start the page appears below the title. The panel disappears once you start writing the body.
+
+- **空のページから書く** (Start from a blank page) closes the panel so that you can start writing right away.
+- **テンプレートから作る** (Create from a template) lists pages whose titles end with テンプレート or "template" (such as `Daily report template`). Enter a title first, then choose a template to insert the body of that page (from its second line) into the new page.
+- **ファイルから読み込む** (Import a file) reads a file in Cosense format (`.txt`) or Markdown format (`.md`). Choose the format with a button, or drag and drop the file onto the page.
+
+If the title is still empty when you import a file, the title is taken from the file: the first line of a Cosense file (or the file name if that line is empty), and for a Markdown file, the `title` in the front matter, the first `#` heading, or the file name, in that order. The file is not imported if a page with the same title already exists. If you have already entered a title, it is kept and only the body is inserted (the line that serves as the title of the file is not added to the body).
+
+If body text is inserted while the title is empty, Cosense uses the first line of the body as the title. This is why you choose a template after entering a title.
+
+Files up to 2 MiB with lines of up to 10,000 characters can be imported.
+
+The conversion from Markdown mainly works as follows:
+
+| Markdown | Cosense |
+| --- | --- |
+| A `# heading` before any other content (when the front matter has no `title`) | The title |
+| Other `#`, `##`, `###`, and `####` or deeper headings | `[****# heading]`, `[***# heading]`, `[**# heading]`, `[*# heading]` |
+| `**bold**` `*italic*` `~~strikethrough~~` | `[* bold]` `[/ italic]` `[- strikethrough]` |
+| Bulleted lists, numbered lists, and task lists | Indented lines, lines starting with `1. `, and lines starting with `[_]` / `[x]` |
+| ```` ```language:file ```` | `code:file` |
+| A ```` ```console ```` (or similar) code block containing only lines starting with `$ ` or `% ` | Command lines |
+| Tables | `table:name` (a bold-only line right before the table becomes its name) |
+| `> quotes`, Zenn's `:::message` and `:::details` | Lines starting with `> ` |
+| Links and images | `[text URL]` and `[image URL]` (links to pages in the project become `[page]`) |
+| `$formula$` and formulas enclosed in `$$` | `[$ formula]` |
+| `---` | `[/icons/hr.icon]` |
 
 ### Adjusting colors and width
 
@@ -379,7 +409,7 @@ Check the following in order:
 3. Did you reload Cosense?
 4. Did you paste the file into the My Page of a different project by mistake?
 
-### The heading menu or emoji suggestions do not work
+### The table of contents or emoji suggestions do not work
 
 - Confirm that UserScript is enabled.
 - If Cosense shows a banner saying that your UserScript has been updated, click the button in the banner to load the UserScript.
@@ -402,6 +432,13 @@ Check the following in order:
 - Confirm that the file is publicly accessible.
 - Confirm that the file is not binary and does not exceed 2 MiB.
 - Open DevTools and check the Console for an error containing `[Cosense GitHub embed]`.
+
+### A file cannot be imported
+
+- Check that the file extension is `.txt`, `.md`, or `.markdown`.
+- Check that the file is 2 MiB or smaller.
+- If a message says that a page with that title already exists, enter a different title and import the file again.
+- The panel for choosing how to start a page appears only on pages without body text.
 
 ### An X card does not appear
 
@@ -443,6 +480,6 @@ Disable or delete the relevant script in the Tampermonkey Dashboard, then reload
 
 ## Acknowledgements
 
-The in-page heading menu is based on the Cosense community script [ページの見出しを作る UserScript](https://scrapbox.io/daiiz/%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%AE%E8%A6%8B%E5%87%BA%E3%81%97%E3%82%92%E4%BD%9C%E3%82%8BUserScript). The emoji suggestion feature is based on [emoji selector](https://scrapbox.io/yutaro/emoji_selector).
+The heading detection used by the table of contents and other features is based on the Cosense community script [ページの見出しを作る UserScript](https://scrapbox.io/daiiz/%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%AE%E8%A6%8B%E5%87%BA%E3%81%97%E3%82%92%E4%BD%9C%E3%82%8BUserScript). The emoji suggestion feature is based on [emoji selector](https://scrapbox.io/yutaro/emoji_selector).
 
 Thanks to Zenn, Cosense, and the authors and communities behind the customization examples used by this project.
