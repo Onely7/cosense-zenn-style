@@ -334,7 +334,7 @@ The official X embed uses an iframe, which is blocked by the Cosense CSP. This r
 - **UserScript cards** (included in the basic customizations): The author, text, and images are fetched from the API that Cosense uses when you paste a post URL (`/api/embed-text/twitter`). Tampermonkey is not required.
 - **Tampermonkey cards** (optional): Post data is fetched from an X Syndication endpoint, and the card also shows the post time, reply and like counts, the parent post, quoted posts, video thumbnails, and more. When the Tampermonkey script is enabled, its cards are shown instead of the UserScript cards.
 
-### 1. Register the Tampermonkey script (optional)
+### 1. Register the Tampermonkey script
 
 Skip this step if the UserScript cards are enough for you. Register this as a **separate Tampermonkey script** from the GitHub embed.
 
