@@ -26,7 +26,7 @@
   https://yahoo.co.jp
 	`[URL タイトル]`
 	 [https://yahoo.com Yahoo!]
- `[タイトル URL]`逆順でもOK
+ `[タイトル URL]`逆順でも OK
   [Yahoo! https://yahoo.com]
 
 [#* 画像]
@@ -100,16 +100,16 @@
   `https://x.com/jack/status/20`
 https://x.com/OpenAI/status/2075686461693898868?s=20
 
- Tampermonkey 版でリプライ元を表示しない場合は、URL のクエリパラメータに `conversation=none` を指定する
+ Tampermonkey 版でリプライ元を表示しない場合は、URL のクエリパラメーターに `conversation=none` を指定する
   `https://x.com/example/status/1234567890?conversation=none`
 
 https://x.com/OpenAI/status/2075274276849226204?s=20
 
 https://x.com/OpenAI/status/2075274276849226204?conversation=none
 
-[#* Github の埋め込み表示]
+[#* GitHub の埋め込み表示]
  Tampermonkey 用のスクリプトを入れると、ファイルの中身が表示される
-[* Github の埋め込み表示に対応している URL]
+[* GitHub の埋め込み表示に対応している URL]
 	1. ファイル全体
 		`https://github.com/octocat/Spoon-Knife/blob/main/README.md`
 https://github.com/octocat/Spoon-Knife/blob/main/README.md
