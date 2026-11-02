@@ -666,21 +666,54 @@ code:style.css
 
 [#* ページ内目次の自動生成]
 	from: [/daiiz/ページの見出しを作るUserScript]
+ `[*# 見出し]` のように `#` を含む太字だけの行を見出しとして、`*` の数に応じた階層付きで一覧にする
+ `#` を含む見出しがないページでは、`[** 見出し]` のように太字だけの行を使う
 code:script.js
- const indexes = function () {
-   scrapbox.PageMenu('見出し').removeAllItems()
-   for (let line of scrapbox.Page.lines) {
-     if (!line.section.start || line.title) continue
-     const image = line.nodes && getIconUrl(line.nodes)
-     const noIcon = !!image
-     const title = line.nodes ? renderPlainText(line.nodes, {noIcon}) : line.text
-     const onClick = () => location.hash = line.id
-     scrapbox.PageMenu('見出し').addItem({title, image, onClick})
+ /*
+  * ページ内の見出しを集める。
+  * level は * の数、depth は最上位の見出しを 0 とした階層の深さ。
+  */
+ function getHeadings () {
+   const candidates = []
+   for (const line of scrapbox.Page.lines ?? []) {
+     if (line.title || !line.nodes) continue
+     const node = getHeadingNode(line.nodes)
+     if (!node) continue
+     const image = getIconUrl(node.children)
+     const text = renderPlainText(node.children, {noIcon: true}).trim()
+     const textWithIcons = renderPlainText(node.children, {noIcon: false}).trim()
+     candidates.push({
+       id: line.id,
+       level: node.type === 'strong' ? 1 : node.unit.strong,
+       hasHash: node.type === 'deco' && node.unit.deco.includes('#'),
+       text: text || textWithIcons,
+       label: image ? text : textWithIcons,
+       image
+     })
    }
+   const headings = candidates.some(heading => heading.hasHash)
+     ? candidates.filter(heading => heading.hasHash)
+     : candidates
+   const top = Math.max(...headings.map(heading => heading.level))
+   for (const heading of headings) heading.depth = Math.min(top - heading.level, 3)
+   return headings
+ }
+ 
+ // 行の中身が太字の装飾（[* ...] や [[...]]）1 つだけのとき、その装飾を返す
+ function getHeadingNode (nodes) {
+   const list = (Array.isArray(nodes) ? nodes : [nodes])
+     .filter(node => typeof node !== 'string' || node.trim() !== '')
+   if (list.length !== 1) return null
+   const [node] = list
+   if (node.type === 'indent') return getHeadingNode(node.children)
+   if (node.type === 'strong') return node
+   if (node.type === 'deco' && node.unit.strong > 0) return node
+   return null
  }
  
  function renderPlainText (node, options) {
-   if (node instanceof Array) return node.map(node => renderPlainText(node, options)).join('')
+   if (node == null) return ''
+   if (Array.isArray(node)) return node.map(child => renderPlainText(child, options)).join('')
    if (typeof node === 'string') return node
    switch (node.type) {
      case 'icon':
@@ -693,19 +726,50 @@ code:script.js
  }
  
  function getIconUrl (node) {
-   if (/icon/.test(node.type)) {
-     return `/api/pages/${node.unit.project || scrapbox.Project.name}/${node.unit.page}/icon`
+   if (node == null || typeof node === 'string') return null
+   if (Array.isArray(node)) {
+     for (const child of node) {
+       const url = getIconUrl(child)
+       if (url) return url
+     }
+     return null
    }
-   if (node instanceof Array) {
-     return node.map(getIconUrl).find(img => img)
+   if (node.type === 'icon' || node.type === 'strong-icon') {
+     const project = node.unit.project || scrapbox.Project.name
+     return `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(node.unit.page)}/icon`
    }
-   return null
+   return getIconUrl(node.children)
+ }
+ 
+ // 行リンク（#行ID）で移動する。すでに同じ行リンクを開いているときは、その行までスクロールする
+ function jumpToLine (id) {
+   if (location.hash !== `#${id}`) {
+     location.hash = id
+     return
+   }
+   const line = document.getElementById(`L${id}`)
+   if (line) window.scrollTo({top: line.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth'})
  }
  
  scrapbox.PageMenu.addMenu({
    title: '見出し',
    image: 'https://gyazo.com/da0408108eda84e56a587630be5e4524/raw',
-   onClick: indexes
+   onClick: () => {
+     const menu = scrapbox.PageMenu('見出し')
+     menu.removeAllItems()
+     const headings = getHeadings()
+     if (headings.length === 0) {
+       menu.addItem({title: '見出しはありません', onClick: () => {}})
+       return
+     }
+     for (const heading of headings) {
+       menu.addItem({
+         title: '　'.repeat(heading.depth) + heading.label,
+         image: heading.image ?? undefined,
+         onClick: () => jumpToLine(heading.id)
+       })
+     }
+   }
  })
 
 [#* Emoji (絵文字)]
