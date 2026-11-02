@@ -67,7 +67,7 @@ Cosense が持つ編集体験はそのままに、見出し、引用、コード
 - [Tampermonkey](https://www.tampermonkey.net/)
 - Chrome または Chromium 系ブラウザー
 
-このプロジェクトの設定は、基本的に**設定した本人の画面だけ**へ適用されます。プロジェクト全体へ配布する ProjectCSS や ProjectScript を対象とした手順ではありません。
+このプロジェクトの設定は基本的に**設定した本人の画面だけ**へ適用されます。プロジェクト全体へ配布する ProjectCSS や ProjectScript を対象とした手順ではありません。
 
 ## セットアップ
 
@@ -76,14 +76,14 @@ Cosense が持つ編集体験はそのままに、見出し、引用、コード
 ### 1. UserScript を有効にする
 
 1. Cosense の右上にある自分のアイコンまたは名前をクリックします。
-2. **User settings** または **ユーザー設定** を開きます。
-3. **Extensions** にある **UserScript** を有効にします。
+2. 「User settings」または「ユーザー設定」を開きます。
+3. 「Extensions」にある「UserScript」を有効にします。
 
 表示名は Cosense の更新や表示言語によって少し異なる場合があります。
 
 ### 2. 自分のページを開く
 
-右上のメニューから **Create my page** または **自分のページ** を選びます。
+右上のメニューから「Create my page」または「自分のページ」を選びます。
 
 すでに自分のページがある場合は、そのページを開いてください。
 
@@ -93,7 +93,7 @@ Cosense が持つ編集体験はそのままに、見出し、引用、コード
 2. ファイルの内容をすべてコピーします。
 3. Cosense の自分のページで、空の行か通常の文字の行にカーソルを置いて貼り付けます。
 4. Cosense のタブを再読み込みします。
-5. 「UserScriptが更新されました」と表示されたら、自分のページの内容を確認してから **UserScriptを読み込む** を押します。
+5. 「UserScriptが更新されました」と表示されたら、自分のページの内容を確認してから「UserScriptを読み込む」を押します。
 
 > [!NOTE]
 > 引用（`>` で始まる行）にカーソルを置いたまま複数行を貼り付けると、Cosense の貼り付け時の変換が働き、記号やインデントが崩れることがあります。
@@ -157,10 +157,10 @@ code:script.js
 
 ページメニューの「ダウンロード」（絵文字のボタンの下）から、表示中のページを保存できます。
 
-- **Cosense 形式 (.txt)**: ページの本文をそのまま保存します。
-- **Markdown 形式 (.md)**: ブラウザー内で Cosense の記法を Markdown に変換してから保存します。
+- Cosense 形式 (.txt): ページの本文をそのまま保存します。
+- Markdown 形式 (.md): ブラウザー内で Cosense の記法を Markdown に変換してから保存します。
 
-Markdown への変換では、主に次のように書き換えます。
+Markdown への変換では主に次のように書き換えます。
 
 | Cosense | Markdown |
 | --- | --- |
@@ -181,7 +181,7 @@ Markdown への変換では、主に次のように書き換えます。
 | アイコン | 小さな画像（画像を読み込めないアイコンは、アイコンのページへのリンク） |
 | 画像 | 画像（Cosense にアップロードした画像は、ほかのサイトから表示できないためリンク） |
 
-日本語の文中の太字などは、CommonMark の規則で強調にならない並び（記号のすぐ内側に「」や `[` があるときなど）の場合だけ、記号の外側に空白を入れます。
+日本語の文中の太字などは CommonMark の規則で強調にならない並び（記号のすぐ内側に「」や `[` があるときなど）の場合だけ、記号の外側に空白を入れます。
 
 画面幅が狭いときは、Cosense の仕様でページメニューの拡張ボタンが一部しか表示されないことがあります。その場合は、ヘッダーのメニューボタン（☰）で開く目次の下部からダウンロードしてください。
 
@@ -252,7 +252,7 @@ X と GitHub の埋め込みカードの大きさは、`[*# 配色と寸法]` �
 
 <img src="./images/image02.png" width=65%>
 
-Cosense のページには、外部通信を制限する CSP（Content Security Policy）があります。GitHub（`github.com`・`raw.githubusercontent.com`）への通信は CSP で拒否され、ファイルの中身を中継する Cosense の API もないため、GitHub ファイルの取得処理は Cosense の UserScript ではなく、Tampermonkey 側で実行します。
+Cosense のページには、外部通信を制限する CSP（Content Security Policy）があります。GitHub（`github.com`・`raw.githubusercontent.com`）への通信は CSP で拒否され、ファイルの中身を中継する Cosense の API もないため、GitHub ファイルの取得処理は Cosense の UserScript ではなく Tampermonkey 側で実行します。
 
 ### 1. Tampermonkey をインストールする
 
@@ -263,29 +263,29 @@ Chrome ウェブストアから [Tampermonkey](https://chromewebstore.google.com
 Chrome 138 以降では、拡張機能ごとにユーザースクリプトの実行許可が必要です。
 
 1. Chrome の拡張機能一覧を開きます。
-2. Tampermonkey の **詳細** または **拡張機能を管理** を開きます。
-3. **ユーザースクリプトを許可する** をオンにします。
+2. Tampermonkey の「詳細」または「拡張機能を管理」を開きます。
+3. 「ユーザースクリプトを許可する」をオンにします。
 
 この項目が見つからない場合は、Tampermonkey の[公式 FAQ](https://www.tampermonkey.net/faq.php?locale=ja&q=Q209)を確認してください。
 
 ### 3. GitHub 埋め込みスクリプトを登録する
 
-次の URL を Chrome で開くと、Tampermonkey のインストール画面が表示されます。**インストール** を押して登録し、Cosense を再読み込みします。
+次の URL を Chrome で開くと、Tampermonkey のインストール画面が表示されます。「インストール」を押して登録し、Cosense を再読み込みします。
 
 ```text
 https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_github_embed_tampermonkey.user.js
 ```
 
-登録した後は、Tampermonkey がこの URL から新しい版を確認して更新します。
+登録した後は、Tampermonkey がこの URL から新しいバージョンを確認して更新します。
 
 インストール画面が表示されない場合は、次の手順で登録します。
 
 1. Chrome 右上の Tampermonkey アイコンをクリックします。
-2. **ダッシュボード**を開きます。
-3. 上部の **＋**、または **新規スクリプトを追加**をクリックします。
+2. 「ダッシュボード」を開きます。
+3. 上部の「＋」、または「新規スクリプトを追加」をクリックします。
 4. エディターに最初から入っているテンプレートをすべて削除します。
 5. [`cosense_github_embed_tampermonkey.user.js`](./tampermonkey/cosense_github_embed_tampermonkey.user.js) の内容をすべて貼り付けます。
-6. `Command + S` または **ファイル → 保存**で保存します。
+6. `Command + S` または「ファイル → 保存」で保存します。
 7. スクリプトが有効になっていることを確認します。
 8. Cosense を再読み込みします。
 
@@ -293,19 +293,19 @@ https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/co
 
 GitHub 上の公開テキストファイルの URL を、ほかの文字を付けずに1行だけ書きます。
 
-ファイル全体を表示する場合:
+ファイル全体を表示する場合は、次のように書きます。
 
 ```text
 https://github.com/octocat/Spoon-Knife/blob/main/README.md
 ```
 
-行範囲を指定する場合:
+行範囲を指定する場合は、次のように書きます。
 
 ```text
 https://github.com/octocat/Spoon-Knife/blob/main/README.md#L1-L3
 ```
 
-1行だけ指定する場合:
+1行だけ指定する場合は、次のように書きます。
 
 ```text
 https://github.com/octocat/Spoon-Knife/blob/main/README.md#L3
@@ -329,16 +329,16 @@ URL の行へカーソルを移すと、編集できるように埋め込みカ�
 
 <img src="./images/image03.png" width=65%>
 
-X の公式埋め込みは iframe を使いますが、Cosense の CSP により iframe は表示できません。本リポジトリでは、iframe を使わない静的なカードとして表示します。カードには次の 2 種類があります。
+X の公式埋め込みは iframe を使いますが、Cosense の CSP により iframe は表示できません。本リポジトリでは iframe を使わない静的なカードとして表示します。カードには次の 2 種類があります。
 
-- **UserScript のカード**（基本カスタマイズに含まれます）: Cosense がポスト URL の貼り付け時に使う API（`/api/embed-text/twitter`）から、投稿者・本文・画像を取得して表示します。Tampermonkey は必要ありません。
-- **Tampermonkey 版のカード**（任意）: X の Syndication 用エンドポイントから取得し、投稿日時、返信数・いいね数、リプライ元、引用ポスト、動画サムネイルなども表示します。Tampermonkey 版が有効なときは、UserScript のカードの代わりにこちらを表示します。
+- UserScript のカード（基本カスタマイズに含まれます）: Cosense がポスト URL の貼り付け時に使う API（`/api/embed-text/twitter`）から、投稿者・本文・画像を取得して表示します。Tampermonkey は必要ありません。
+- Tampermonkey 版のカード（任意）: X の Syndication 用エンドポイントから取得し、投稿日時、返信数・いいね数、リプライ元、引用ポスト、動画サムネイルなども表示します。Tampermonkey 版が有効なときは、UserScript のカードの代わりにこちらを表示します。
 
-### 1. Tampermonkey 版を登録する（任意）
+### 1. Tampermonkey 版を登録する
 
 UserScript のカードだけを使う場合、この手順は不要です。GitHub 埋め込みとは**別のスクリプト**として登録します。
 
-次の URL を Chrome で開き、Tampermonkey のインストール画面で **インストール** を押してから、Cosense を再読み込みします。登録した後は、Tampermonkey がこの URL から新しい版を確認して更新します。
+次の URL を Chrome で開き、Tampermonkey のインストール画面で「インストール」を押してから、Cosense を再読み込みします。登録した後は、Tampermonkey がこの URL から新しいバージョンを確認して更新します。
 
 ```text
 https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_x_post_embed_tampermonkey.user.js
@@ -347,13 +347,13 @@ https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/co
 インストール画面が表示されない場合は、次の手順で登録します。
 
 1. Tampermonkey のダッシュボードを開きます。
-2. **＋** または **新規スクリプトを追加**をクリックします。
+2. 「＋」または「新規スクリプトを追加」をクリックします。
 3. 最初から入っているテンプレートをすべて削除します。
 4. [`cosense_x_post_embed_tampermonkey.user.js`](./tampermonkey/cosense_x_post_embed_tampermonkey.user.js) の内容をすべて貼り付けます。
 5. 保存し、スクリプトを有効にします。
 6. Cosense を再読み込みします。
 
-古い版を別のスクリプトとして残している場合は、同時に動かさず、使用する版だけを有効にしてください。
+古いバージョンを別のスクリプトとして残している場合は、同時に動かさず、使用するバージョンだけを有効にしてください。
 
 ### 2. X 埋め込みを確認する
 
@@ -363,7 +363,7 @@ X または Twitter のポスト URL を、ほかの文字を付けずに1行だ
 https://x.com/OpenAI/status/2075686461693898868
 ```
 
-Tampermonkey 版では、リプライの URL のときに、取得できればリプライ元のポストも表示します。
+Tampermonkey 版ではリプライの URL のときに、取得できればリプライ元のポストも表示します。
 
 リプライ元を表示しない場合は、`conversation=none` を指定します。
 
@@ -396,7 +396,7 @@ Cosense の UserScript と Tampermonkey のユーザースクリプトは、対�
 - `@match` や `@connect` が意図せず広げられていないか、更新時に確認する
 - 不要になったスクリプトは無効化または削除する
 
-現在の GitHub 埋め込みスクリプトは、`github.com` と `raw.githubusercontent.com` への通信を許可しています。X 埋め込みスクリプトは、`cdn.syndication.twimg.com` への通信を許可しています。UserScript の X カードは、ポスト URL を Cosense（`scrapbox.io`）の API へ送って投稿の内容を取得します。
+現在の GitHub 埋め込みスクリプトは、`github.com` と `raw.githubusercontent.com` への通信を許可しています。X 埋め込みスクリプトは `cdn.syndication.twimg.com` への通信を許可しています。UserScript の X カードはポスト URL を Cosense（`scrapbox.io`）の API へ送って投稿の内容を取得します。
 
 ## トラブルシューティング
 
@@ -412,7 +412,7 @@ Cosense の UserScript と Tampermonkey のユーザースクリプトは、対�
 ### 目次や絵文字候補が動かない
 
 - UserScript が有効になっているか確認します。
-- 「UserScriptが更新されました」と表示されている場合は、**UserScriptを読み込む** を押します。
+- 「UserScriptが更新されました」と表示されている場合は、「UserScriptを読み込む」を押します。
 - `code:script.js` のコードブロックが崩れていないか確認します。
 - 設定後に Cosense を再読み込みします。
 
@@ -420,15 +420,15 @@ Cosense の UserScript と Tampermonkey のユーザースクリプトは、対�
 
 - Tampermonkey 自体が有効か確認します。
 - 対象スクリプトのスイッチが有効か確認します。
-- Chrome の **ユーザースクリプトを許可する**がオンか確認します。
-- 拡張機能の詳細で、Tampermonkey の **サイトへのアクセス** が **すべてのサイト**（または scrapbox.io を含む設定）になっているか確認します。
-- 同じ機能の旧版が同時に有効になっていないか確認します。
+- Chrome の「ユーザースクリプトを許可する」がオンか確認します。
+- 拡張機能の詳細で、Tampermonkey の「サイトへのアクセス」が「すべてのサイト」（または scrapbox.io を含む設定）になっているか確認します。
+- 同じ機能の古いバージョンが同時に有効になっていないか確認します。
 - Cosense を再読み込みします。
 
 ### GitHub のカードが表示されない
 
 - URL だけの行になっているか確認します。
-- ディレクトリではなく、ファイルを開く `blob` URL か確認します。
+- ディレクトリではなくファイルを開く `blob` URL か確認します。
 - ファイルが公開されているか確認します。
 - バイナリファイルや 2 MiB を超えるファイルではないか確認します。
 - DevTools の Console で `[Cosense GitHub embed]` を含むエラーを確認します。
@@ -467,7 +467,7 @@ Tampermonkey のダッシュボードで、対象スクリプトを無効化ま�
 ## 注意事項
 
 - 本プロジェクトは Zenn、Cosense、GitHub、X、Tampermonkey の公式プロジェクトではありません。
-- Zenn の完全な複製ではなく、Cosense の仕組みを保ったまま、一部の見た目と表示機能を参考にしたカスタマイズです。
+- Zenn の完全な複製ではなく Cosense の仕組みを保ったまま、一部の見た目と表示機能を参考にしたカスタマイズです。
 - Cosense の HTML 構造や各外部サービスの仕様変更により、将来修正が必要になる場合があります。
 
 ## 参考資料
@@ -480,6 +480,6 @@ Tampermonkey のダッシュボードで、対象スクリプトを無効化ま�
 
 ## 謝辞
 
-目次などで使う見出しの判定は、Cosense 上の「[ページの見出しを作る UserScript](https://scrapbox.io/daiiz/%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%AE%E8%A6%8B%E5%87%BA%E3%81%97%E3%82%92%E4%BD%9C%E3%82%8BUserScript)」を参考にしています。絵文字候補機能は、「[emoji selector](https://scrapbox.io/yutaro/emoji_selector)」を参考にしています。
+目次などで使う見出しの判定は、Cosense 上の「[ページの見出しを作る UserScript](https://scrapbox.io/daiiz/%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%AE%E8%A6%8B%E5%87%BA%E3%81%97%E3%82%92%E4%BD%9C%E3%82%8BUserScript)」を参考にしています。絵文字候補機能は「[emoji selector](https://scrapbox.io/yutaro/emoji_selector)」を参考にしています。
 
 Zenn、Cosense、および各カスタマイズ例の作者・コミュニティに感謝します。
