@@ -1,30 +1,100 @@
 [***# Cosense Zenn Style]
 [Zenn https://zenn.dev/zenn/articles/markdown-guide] 風の見た目を Cosense (Scrapbox) で再現することを目指した UserCSS, UserScript, (Tampermonkey)
+	(Github) https://github.com/Onely7/cosense-zenn-style
 
 [**# UserCSS]
 
+[*# 配色と寸法]
+ 色・本文幅・文字サイズは、このブロックの CSS 変数を書き換えるだけで調整できる
+code:style.css
+ :root {
+   /* 寸法 */
+   --zs-page-width: 960px; /* 本文の最大幅（Cosense 標準と同じ） */
+   --zs-font-size: 18px;
+   --zs-line-height: 32px;
+   --zs-letter-spacing: 0.5px;
+   --zs-heading-indent: 18px; /* 見出しの左端から文字までの距離 */
+ 
+   /* 基本色 */
+   --zs-accent: #3ea8ff;
+   --zs-accent-strong: #0f83fd;
+   --zs-accent-hover: #1283fd;
+   --zs-text: #2e445c;
+   --zs-text-muted: #65717b;
+   --zs-icon-muted: rgb(125 139 149);
+   --zs-border: #d6e3ed;
+   --zs-body-bg: #edf2f7;
+   --zs-surface: #fff;
+   --zs-surface-muted: #f1f5f9;
+   --zs-shadow: 0 6px 18px rgba(33, 53, 71, 0.16);
+   --zs-bullet: rgba(101, 113, 123, 0.55);
+ 
+   /* 見出しの左罫線（数字は * の数） */
+   --zs-heading-1: #edf2f7;
+   --zs-heading-2: #e0efff;
+   --zs-heading-3: #bfdcff;
+   --zs-heading-4: #3ea8ff;
+   --zs-heading-5: #0f83fd;
+ 
+   /* マーカー・二重括弧 */
+   --zs-marker-text: #2e445c;
+   --zs-marker-bg: #fff6e4;
+   --zs-marker-strong-text: #fff;
+   --zs-marker-strong-bg: #ff6868;
+   --zs-subheading-bg: #ecf5ff;
+ 
+   /* 引用 */
+   --zs-quote-text: #65717b;
+   --zs-quote-border: #8f9faa;
+   --zs-quote-editing-bg: #f5f9fc;
+ 
+   /* コード */
+   --zs-inline-code-text: #2e445c;
+   --zs-inline-code-bg: #edf2f7;
+   --zs-code-bg: #1a2638;
+   --zs-code-bg-editing: #25364d;
+   --zs-code-title-bg: #323e52;
+   --zs-code-title-bg-editing: #3b4b63;
+   --zs-code-title-text: rgba(255, 255, 255, 0.9);
+   --zs-code-text: #fff;
+   --zs-code-caret: #ffd166;
+ 
+   /* 表 */
+   --zs-table-cell-bg: #fff;
+   --zs-table-head-bg: #edf2f7;
+   --zs-table-editing-bg: #f0f7ff;
+ 
+   /* 編集中の行・テキストカーソル */
+   --zs-cursor-line-bg: #3ea8ff14;
+   --zs-caret: #3ea8ff;
+ }
+ 
+ /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
+ @media (max-width: 767px) {
+   :root {
+     --zs-font-size: 16px;
+     --zs-line-height: 28px;
+   }
+ }
+
 [*# 外観]
 code:style.css
- body{
-   background-color:#edf2f7;
- }
- .status-bar>div {
-   background-color: #f1f5f9;
- }
+ /* 背景・ステータスバー・カードの色を Zenn 風にそろえる */
  :root {
-   /* ページ一覧・関連ページのカード上端の色（Cosense の変数） */
-   --card-title-bg: #d6e3ed;
+   --card-title-bg: var(--zs-border); /* ページ一覧・関連ページのカード上端の色 */
+ }
+ body {
+   background-color: var(--zs-body-bg);
+ }
+ .status-bar > div {
+   background-color: var(--zs-surface-muted);
  }
  .grid li.page-list-item a .header {
    border-top-width: 10px;
  }
  
-
-code: style.css
- /* 本文幅。Cosense のグリッドの列幅を変数で指定する（初期値は Cosense 標準と同じ 960px） */
- :root {
-   --zs-page-width: 960px;
- }
+code:style.css
+ /* 本文幅（--zs-page-width）を Cosense のグリッドへ反映する */
  @media (min-width: 768px) {
    .app:not(.presentation) .page-column:not(:has(> .page-sidebar)) {
      grid-template-columns: minmax(200px, var(--zs-page-width)) min-content;
@@ -35,17 +105,9 @@ code: style.css
  }
  
  .editor {
-     font-size: 18px;
-     line-height: 32px;
-     letter-spacing: 0.5px;
- }
- 
- /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
- @media (max-width: 767px) {
-   .editor {
-     font-size: 16px;
-     line-height: 28px;
-   }
+   font-size: var(--zs-font-size);
+   line-height: var(--zs-line-height);
+   letter-spacing: var(--zs-letter-spacing);
  }
  
 
@@ -55,71 +117,65 @@ code: style.css
 	`[[hoge moga]]` → [[hoge moga]]
 code:style.css
  .deco-\! {
-     color: #2e445c;
-     background-color: #fff6e4; /* 黄背景 */
-     padding: 0.1em 0.2em 0.1em 0.2em;
+   color: var(--zs-marker-text);
+   background-color: var(--zs-marker-bg); /* 黄背景 */
+   padding: 0.1em 0.2em;
  }
  .level-1 .deco-\! {
-     color: #fff; /* 白文字 */
-     background-color: #ff6868; /* 赤背景 */
-     padding: 0.1em 0.2em 0.1em 0.2em;
+   color: var(--zs-marker-strong-text); /* 白文字 */
+   background-color: var(--zs-marker-strong-bg); /* 赤背景 */
+   padding: 0.1em 0.2em;
  }
  
  /* 二重括弧は小見出しにしたい */
  .line strong:not([class]) {
-     background-color: #ecf5ff;
-     padding: 0.2em 0.5em;
+   background-color: var(--zs-subheading-bg);
+   padding: 0.2em 0.5em;
  }
  
 
 [*# 見出し]
 code:style.css
- :root {
- 	--left-total: 18px;
- }
+ /*
+  * [*# 見出し] のように # を含む太字を見出しにする（* が多いほど大きい）。
+  * 罫線の太さに関係なく、文字の左端を --zs-heading-indent にそろえる。
+  */
+ .level-1 .deco-\#,
+ .level-2 .deco-\#,
+ .level-3 .deco-\#,
+ .level-4 .deco-\#,
  .level-5 .deco-\# {
-		display: inline-block;
- 	width: 100%;
- 	margin: .25em 0;
- 	padding: .25em 0;
- 	padding-left: calc(var(--left-total) - 9px);
- 	border-left: 9px solid #0f83fd;
- 	border-bottom: 1px solid #d6e3ed;
- }
- .level-4 .deco-\# {
-		display: inline-block;
- 	width: 100%;
- 	margin: .25em 0;
- 	padding: .25em 0;
- 	padding-left: calc(var(--left-total) - 8px);
-  	border-left: 8px solid #3ea8ff;
- 	border-bottom: 1px solid #d6e3ed;
- }
- .level-3 .deco-\# {
-		display: inline-block;
- 	width: 100%;
- 	margin: .25em 0;
- 	padding: .25em 0;
-  	padding-left: calc(var(--left-total) - 7px);
- 	border-left: 7px solid #bfdcff;
- 	border-bottom: 1px solid #d6e3ed;
- }
- .level-2 .deco-\# {
-		display: inline-block;
- 	width: 100%;
- 	margin: .25em 0;
- 	padding: .25em 0;
-  	padding-left: calc(var(--left-total) - 6px);
- 	border-left: 6px solid #e0efff;
+   display: inline-block;
+   box-sizing: border-box;
+   width: 100%;
+   margin: 0.25em 0;
+   padding: 0.25em 0;
+   padding-left: calc(var(--zs-heading-indent) - var(--zs-heading-border-width));
+   border-left: var(--zs-heading-border-width) solid var(--zs-heading-color);
  }
  .level-1 .deco-\# {
-		display: inline-block;
- 	width: 100%;
- 	margin: .25em 0;
-		padding: .25em 0;
-	 	padding-left: calc(var(--left-total) - 5px);
-		border-left: 5px solid #edf2f7;
-	}
+   --zs-heading-border-width: 5px;
+   --zs-heading-color: var(--zs-heading-1);
+ }
+ .level-2 .deco-\# {
+   --zs-heading-border-width: 6px;
+   --zs-heading-color: var(--zs-heading-2);
+ }
+ .level-3 .deco-\# {
+   --zs-heading-border-width: 7px;
+   --zs-heading-color: var(--zs-heading-3);
+   border-bottom: 1px solid var(--zs-border);
+ }
+ .level-4 .deco-\# {
+   --zs-heading-border-width: 8px;
+   --zs-heading-color: var(--zs-heading-4);
+   border-bottom: 1px solid var(--zs-border);
+ }
+ .level-5 .deco-\# {
+   --zs-heading-border-width: 9px;
+   --zs-heading-color: var(--zs-heading-5);
+   border-bottom: 1px solid var(--zs-border);
+ }
  
  /* スマホ幅では大きな見出しの文字を控えめにして、折り返しを減らす */
  @media (max-width: 767px) {
@@ -137,46 +193,75 @@ code:style.css
    }
  }
 
-[*# チェックボックス] 
+[*# チェックボックス]
  `[_]` -> [_]
  `[x]` -> [x]
 code:style.css
  /*
-  * チェックボックスになるタグ v2 Font Awesome版
-  * Cosense のリンクは /プロジェクト名/_ の形になるため、href の末尾で判定する（ハッシュタグは除く）
+  * チェックボックスになるタグ（Font Awesome 版）。
+  * Cosense のリンクは /プロジェクト名/_ の形になるため、href の末尾で判定する。
+  * Font Awesome は Cosense 本体が読み込んでいるものを使う。
   */
-  .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon) span,
-  .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon) span {
-    display: inline-block; width: 0; text-indent: -9999px }
-  .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon)::after,
-  .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon)::after {
-    display: inline-block; min-width: 1.15em; padding-left: 1px;
-    font-family: 'Font Awesome 5 Free'; font-weight: 400;
-    font-size: 120%; text-align: center; vertical-align: middle }
-  .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon)::after { content: '\f0c8'; color: #3ea8ff }
-  .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon)::after { content: '\f14a'; color: #0f83fd }
+ .line:not(.cursor-line) a.page-link[type="link"]:is([href$="/_"], [href$="/x"]):not(.icon) span {
+   display: inline-block;
+   width: 0;
+   text-indent: -9999px;
+ }
+ .line:not(.cursor-line) a.page-link[type="link"]:is([href$="/_"], [href$="/x"]):not(.icon)::after {
+   display: inline-block;
+   min-width: 1.15em;
+   padding-left: 1px;
+   font-family: 'Font Awesome 5 Free';
+   font-weight: 400;
+   font-size: 120%;
+   text-align: center;
+   vertical-align: middle;
+ }
+ .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon)::after {
+   content: '\f0c8';
+   color: var(--zs-accent);
+ }
+ .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon)::after {
+   content: '\f14a';
+   color: var(--zs-accent-strong);
+ }
 
 [*# 外部リンクに対するアイコン]
+ 外部リンクの前にはアイコンを付けない（ProjectCSS などが付けたアイコンも消す）
 code:style.css
- /* 外部リンクにはアイコンを付けない。疑似要素自体を作らず、長い URL が 1 行目を空けて折り返されるのを防ぐ */
- .line a.link:not(.icon)::before { content: none }
+ /* 疑似要素自体を作らないことで、長い URL が 1 行目を空けて折り返されるのを防ぐ */
+ .line a.link:not(.icon)::before {
+   content: none;
+ }
 
-[*#  カーソル迷子対策]
+[*# カーソル迷子対策]
 code:style.css
-  .cursor-line {
-    background-color: #3ea8ff14;
-  }
+ .cursor-line {
+   background-color: var(--zs-cursor-line-bg);
+ }
 
-[*#  カーソル点滅]
+[*# カーソル点滅]
 code:style.css
+ /*
+  * テキストカーソル（キャレット）の色と太さ。
+  * Cosense のカーソルは SVG で描かれているため、Cosense の変数 --cursor-color で塗る。
+  */
+ :root {
+   --cursor-color: var(--zs-caret);
+ }
+ body {
+   caret-color: var(--zs-caret);
+ }
+ .cursor-container .cursor svg rect {
+   width: 2px;
+ }
+ 
  .cursor-container .cursor {
    animation: zs-cursor-blink 1s infinite;
  }
  @keyframes zs-cursor-blink {
-   0% { opacity: 0; }
-   50% { opacity: 0; }
-   51% { opacity: 1; }
-   100% { opacity: 1;}
+   0%, 50% { opacity: 0; }
+   51%, 100% { opacity: 1; }
  }
  
  /* 視差効果を減らす設定のときは点滅させない */
@@ -185,23 +270,19 @@ code:style.css
      animation: none;
    }
  }
- 
- /* テキストカーソル（キャレット）の色。Cosense のカーソルは SVG なので --cursor-color で塗る */
-  body {
-    --caret-color: #3ea8ff;
-    --cursor-color: var(--caret-color);
-    caret-color: var(--caret-color);
-  }
-  .cursor-container .cursor svg rect {
-    width: 2px;
-  }
 
 [*# 箇条書きスタイル変更]
 code:style.css
  .app .line .indent-mark .dot {
-   height: .2em; width: .4em; border-radius: 25%;
-   background-color: rgba(101,113,123,.55) }
- .app:not(.presentation) .line .indent-mark .dot { top: auto; bottom: 0 }
+   height: 0.2em;
+   width: 0.4em;
+   border-radius: 25%;
+   background-color: var(--zs-bullet);
+ }
+ .app:not(.presentation) .line .indent-mark .dot {
+   top: auto;
+   bottom: 0;
+ }
 
 [*# 引用]
 code:style.css
@@ -211,9 +292,9 @@ code:style.css
   */
  .line.quote-line .quote {
    box-sizing: border-box;
-   color: #65717b;
+   color: var(--zs-quote-text);
    background-color: transparent;
-   border-left: solid 3px #8f9faa;
+   border-left: solid 3px var(--zs-quote-border);
    border-radius: 0;
    padding: 2px 0 2px 0.7em;
    font-size: 0.97em;
@@ -226,7 +307,7 @@ code:style.css
  
  /* 編集中の引用行を薄く強調する */
  .line.cursor-line.quote-line .quote {
-   background-color: #f5f9fc;
+   background-color: var(--zs-quote-editing-bg);
  }
 
 [*# GitHub ファイル埋め込み]
@@ -252,8 +333,8 @@ code:style.css
  
  /* インラインコード */
  .line code:not(.code-start):not(.code-body) {
-   color: #2e445c;
-   background-color: #edf2f7;
+   color: var(--zs-inline-code-text);
+   background-color: var(--zs-inline-code-bg);
    border-radius: 4px;
    padding: 0.15em 0.35em;
    margin: 0 0.1em;
@@ -274,7 +355,7 @@ code:style.css
  }
  
  .line span.code-block span.indent {
-   background-color: #1a2638;
+   background-color: var(--zs-code-bg);
  }
  
  /* 左側のインデント領域をコード行の高さまで塗る */
@@ -284,7 +365,7 @@ code:style.css
  
  .line span.code-block .pad:not(.code-block-margin) {
    height: 100%;
-   background-color: #1a2638;
+   background-color: var(--zs-code-bg);
  }
  
  .line span.code-block span.code-block-margin {
@@ -292,7 +373,7 @@ code:style.css
  }
  
  .line span.code-block code.code-body {
-   color: #fff;
+   color: var(--zs-code-text);
    background-color: transparent;
    font-size: 0.9em;
  }
@@ -302,8 +383,8 @@ code:style.css
    display: block;
    width: 100%;
    box-sizing: border-box;
-   color: rgba(255, 255, 255, 0.9);
-   background-color: #323e52;
+   color: var(--zs-code-title-text);
+   background-color: var(--zs-code-title-bg);
    padding: 0.1em 0.55em;
    font-size: 0.78em;
    font-weight: 600;
@@ -312,7 +393,7 @@ code:style.css
  /* Cosense 標準のタイトル色・背景が内側に残るのを防ぐ */
  .line span.code-block code.code-start .code-block-start,
  .line span.code-block code.code-start .code-block-start * {
-   color: rgba(255, 255, 255, 0.9) !important;
+   color: var(--zs-code-title-text) !important;
    background-color: transparent !important;
  }
  
@@ -365,16 +446,15 @@ code:style.css
      font-size: 0.85em;
    }
  }
-	
  
- /* コードブロック編集中のカーソルと現在行を見やすくする */
+ /* コードブロック編集中の現在行を見やすくする */
  .line.cursor-line span.code-block span.indent,
  .line.cursor-line span.code-block .pad:not(.code-block-margin) {
-   background-color: #25364d;
+   background-color: var(--zs-code-bg-editing);
  }
  
  .line.cursor-line span.code-block code.code-start {
-   background-color: #3b4b63;
+   background-color: var(--zs-code-title-bg-editing);
  }
  
  /*
@@ -382,14 +462,14 @@ code:style.css
   * カーソル要素は .line の外（#editor の直下）にあるため、.editor 側で判定する。
   */
  .editor:has(.line.cursor-line .code-block) {
-   --cursor-color: #ffd166;
+   --cursor-color: var(--zs-code-caret);
  }
  .editor:has(.line.cursor-line .code-block) .cursor svg {
    filter: drop-shadow(0 0 2px rgba(255, 209, 102, 0.9));
  }
  
  body:has(.line.cursor-line .code-block) #text-input {
-   caret-color: #ffd166 !important;
+   caret-color: var(--zs-code-caret) !important;
  }
 
 [*# 表（テーブル）]
@@ -405,69 +485,90 @@ code:style.css
   * 列数が増えた場合は文字と余白を少し小さくする。
   */
  .table-block {
-   width: 100%;
-   max-width: 100%;
-	
    font-size: 0.95em;
    line-height: 1.5;
  }
-	
-	
+ 
  /*
   * 表の行。
   *
   * 編集中の行へレイアウト変更を適用すると、
   * Cosense のカーソル移動へ影響する可能性があるため、
   * 非編集行だけを対象にする。
+  *
+  * インデントした表は Cosense が行へ margin-left を付けるため、
+  * 幅を auto にして、その分だけ行を短くする（100% だと本文幅から右へはみ出す）。
   */
  .line:not(.cursor-line) .table-block-row {
    display: flex !important;
    align-items: stretch !important;
-	
-   /* インデントした表は Cosense が行へ margin-left を付けるため、auto にして本文幅からはみ出さないようにする */
    width: auto !important;
    max-width: 100% !important;
    height: auto !important;
  }
-	
-	
+ 
  /*
   * 本文幅をすべてのセルで均等に分ける。
   */
  .line:not(.cursor-line) .table-block .cell {
    display: flex !important;
    align-items: flex-start;
-	
    flex: 1 1 0 !important;
    width: 0 !important;
    min-width: 0 !important;
    max-width: none !important;
-	
    box-sizing: border-box;
    vertical-align: top;
  }
-	
-	
+ 
  /*
   * セル内テキストを自動で折り返す。
   */
  .line:not(.cursor-line) .table-block .cell-text {
    display: block;
    box-sizing: border-box;
-	
    width: 100%;
    min-width: 0;
    max-width: 100%;
-	
    white-space: normal;
    overflow-wrap: anywhere;
    word-break: normal;
    text-wrap: pretty;
-	
    vertical-align: top;
  }
-	
-	
+ 
+ /* table:テーブル名 の表示を控えめにする */
+ .table-block .table-block-start {
+   color: var(--zs-text-muted);
+   background-color: transparent;
+   padding: 0.2em 0.1em 0.35em;
+   font-size: 0.85em;
+   font-weight: 600;
+ }
+ 
+ .table-block .table-block-start a {
+   color: var(--zs-text-muted);
+ }
+ 
+ /* Cosense 標準の列ごとの背景色をそろえる */
+ .table-block .cell:nth-child(odd),
+ .table-block .cell:nth-child(even) {
+   color: inherit;
+   background-color: var(--zs-table-cell-bg);
+ }
+ 
+ /* 各セルの余白と境界線 */
+ .table-block .cell {
+   box-sizing: border-box;
+   padding: 0.5rem;
+   border-right: solid 1px var(--zs-border);
+   border-bottom: solid 1px var(--zs-border);
+ }
+ 
+ .table-block .cell:first-child {
+   border-left: solid 1px var(--zs-border);
+ }
+ 
  /*
   * 4列以上では文字と余白を少しコンパクトにする。
   */
@@ -476,15 +577,14 @@ code:style.css
  .cell {
    padding: 0.4rem;
  }
-	
+ 
  .line:not(.cursor-line)
  .table-block-row:has(> .cell:nth-child(4))
  .cell-text {
    font-size: 0.9em;
    line-height: 1.45;
  }
-	
-	
+ 
  /*
   * 6列以上ではさらにコンパクトにする。
   */
@@ -493,67 +593,14 @@ code:style.css
  .cell {
    padding: 0.3rem;
  }
-	
+ 
  .line:not(.cursor-line)
  .table-block-row:has(> .cell:nth-child(6))
  .cell-text {
    font-size: 0.82em;
    line-height: 1.4;
  }
-	
-	
- /* table:テーブル名 の表示を控えめにする */
- .table-block .table-block-start {
-   color: #65717b;
-   background-color: transparent;
-   padding: 0.2em 0.1em 0.35em;
-   font-size: 0.85em;
-   font-weight: 600;
- }
-	
- .table-block .table-block-start a {
-   color: #65717b;
- }
-	
-	
- /* Cosense 標準の列ごとの背景色を白にそろえる */
- .table-block .cell:nth-child(odd),
- .table-block .cell:nth-child(even) {
-   color: inherit;
-   background-color: #fff;
- }
-	
-	
- /* 各セルの余白と境界線 */
- .table-block .cell {
-   box-sizing: border-box;
-   padding: 0.5rem;
-	
-   border-right: solid 1px #d6e3ed;
-   border-bottom: solid 1px #d6e3ed;
- }
-	
- .table-block .cell:first-child {
-   border-left: solid 1px #d6e3ed;
- }
-	
-	
- /* 4列以上では、上の通常余白を上書きする */
- .line:not(.cursor-line)
- .table-block-row:has(> .cell:nth-child(4))
- .cell {
-   padding: 0.4rem;
- }
-	
-	
- /* 6列以上では、上の4列用余白を上書きする */
- .line:not(.cursor-line)
- .table-block-row:has(> .cell:nth-child(6))
- .cell {
-   padding: 0.3rem;
- }
-	
-	
+ 
  /* スマホ幅では余白をさらに詰めて、1 列あたりの文字数を確保する */
  @media (max-width: 767px) {
    .line:not(.cursor-line) .table-block .cell {
@@ -566,71 +613,65 @@ code:style.css
      padding: 0.25rem;
    }
  }
-	
-	
+ 
  /* 先頭行を見出し行として表示する */
  .line:has(.table-block-start) + .line .table-block .cell,
  .section-title + .line .table-block .cell {
-   border-top: solid 1px #d6e3ed;
-   background-color: #edf2f7;
+   border-top: solid 1px var(--zs-border);
+   background-color: var(--zs-table-head-bg);
    font-weight: 700;
  }
-	
-	
+ 
  /* 編集中の行がセル背景に隠れないようにする */
  .line.cursor-line .table-block .cell {
-   background-color: #f0f7ff;
+   background-color: var(--zs-table-editing-bg);
  }
 
 [*# ヘッダーメニュー]
 code:style.css
- :root {
-   --header-muted-color: rgb(125 139 149);
- }
-	
  .navbar {
    /* project name */
-   --navbar-title-color: var(--header-muted-color);
-	
+   --navbar-title-color: var(--zs-icon-muted);
+ 
    /* project icon の隣にある下向き矢印 */
-   --navbar-icon-color: var(--header-muted-color);
-   --navbar-icon-hovered-color: var(--header-muted-color);
-   --navbar-icon-active-color: var(--header-muted-color);
-	
+   --navbar-icon-color: var(--zs-icon-muted);
+   --navbar-icon-hovered-color: var(--zs-icon-muted);
+   --navbar-icon-active-color: var(--zs-icon-muted);
+ 
    /* 検索アイコン */
-   --search-form-icon-color: var(--header-muted-color);
-   --search-form-icon-focus-color: var(--header-muted-color);
-	
-   border-bottom: solid #d6e3ed 0.5px;
+   --search-form-icon-color: var(--zs-icon-muted);
+   --search-form-icon-focus-color: var(--zs-icon-muted);
+ 
+   border-bottom: solid var(--zs-border) 0.5px;
    background-color: rgba(255, 255, 255, 0.94);
  }
-	
+ 
  /*
   * project icon の SVG には色を指定しない。
   * アイコンが本来持っている色と濃淡をそのまま表示する。
   */
-	
+ 
  .search-form .form-group input {
-   background-color: #f1f5f9;
-   border: solid #d6e3ed 0.5px;
+   background-color: var(--zs-surface-muted);
+   border: solid var(--zs-border) 0.5px;
  }
-	
+ 
  .new-button {
-   background-color: #3ea8ff;
+   background-color: var(--zs-accent);
    transition: background-color 0.15s ease;
  }
-	
+ 
  .new-button:hover {
-   background-color: #1283fd !important;
+   background-color: var(--zs-accent-hover) !important;
  }
-	
+ 
  .new-button div {
    background-color: #fff !important;
  }
-	
+ 
  /* モバイル表示の検索ボタン */
  a.mobile-search-toggle {
-   color: var(--header-muted-color) !important;
+   color: var(--zs-icon-muted) !important;
  }
  
  /*
@@ -670,11 +711,11 @@ code:style.css
    overflow-y: auto;
    overscroll-behavior: contain;
    padding: 4px;
-   color: #2e445c;
-   background-color: #fff;
-   border: 1px solid #d6e3ed;
+   color: var(--zs-text);
+   background-color: var(--zs-surface);
+   border: 1px solid var(--zs-border);
    border-radius: 8px;
-   box-shadow: 0 6px 18px rgba(33, 53, 71, 0.16);
+   box-shadow: var(--zs-shadow);
    font-size: 14px;
    line-height: 1.4;
    letter-spacing: normal;
@@ -702,8 +743,8 @@ code:style.css
    display: inline-flex;
    align-items: center;
    justify-content: center;
-   color: #65717b;
-   background-color: #f1f5f9;
+   color: var(--zs-text-muted);
+   background-color: var(--zs-surface-muted);
    border-radius: 4px;
    font-size: 11px;
    font-weight: 700;
@@ -716,11 +757,11 @@ code:style.css
  
  .zs-emoji-item:hover,
  .zs-emoji-item.is-selected {
-   background-color: #f1f5f9;
+   background-color: var(--zs-surface-muted);
  }
  
  .zs-emoji-item.is-selected {
-   color: #0f83fd;
+   color: var(--zs-accent-strong);
  }
  
  @media print {
