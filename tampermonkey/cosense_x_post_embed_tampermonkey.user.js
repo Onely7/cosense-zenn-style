@@ -1129,6 +1129,11 @@
 
       const strong = document.createElement("strong");
 
+      /*
+       * class を付けておくと、Cosense が class のない strong（[[太字]]）に付ける
+       * 背景色と余白が当たらない。
+       */
+      strong.className = "x-static-stat-value";
       strong.textContent = formatCount(value);
 
       stat.append(strong, document.createTextNode(` ${label}`));
