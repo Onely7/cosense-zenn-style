@@ -1241,6 +1241,22 @@
     return card;
   };
 
+  /*
+   * 返信のデータに含まれる返信元のポストは簡略版で、長文（note_tweet）かどうかが分からない。
+   * そのため返信元のポストも取得し、取得できたときはそちらを使う。
+   */
+  const withParent = async (source, tweet) => {
+    const parentId = tweet?.parent?.id_str;
+
+    if (source.conversation === "none" || !/^\d+$/.test(parentId || "")) {
+      return tweet;
+    }
+
+    const parent = await fetchTweet(parentId).catch(() => null);
+
+    return parent ? { ...tweet, parent } : tweet;
+  };
+
   const buildMessage = (className, text) => {
     const element = document.createElement("div");
 
@@ -1502,6 +1518,7 @@
     setHostContent(line, buildMessage("x-static-loading", "Loading X post..."));
 
     fetchTweet(source.id)
+      .then((tweet) => withParent(source, tweet))
       .then((tweet) => {
         finishRender(line, source, token, tweet);
       })
