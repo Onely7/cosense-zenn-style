@@ -803,8 +803,9 @@ code:style.css
    filter: invert(1);
  }
  
- /* 見出しメニューなどの長い項目を、画面幅に収まるように折り返す */
+ /* メニューの幅は項目に合わせ、見出しメニューなどの長い項目だけを画面幅に収まるように折り返す */
  .page-menu-extension .dropdown-menu {
+   width: max-content;
    max-width: min(360px, calc(100vw - 16px));
  }
  
@@ -1125,6 +1126,48 @@ code:style.css
    }
  }
  
+ /* スマホの目次メニューの下端に置く、ページのダウンロード */
+ .zs-toc-actions {
+   display: none;
+ }
+ 
+ @media (max-width: 767px) {
+   .zs-toc.is-open .zs-toc-actions {
+     position: sticky;
+     bottom: -16px;
+     display: flex;
+     flex-wrap: wrap;
+     gap: 8px;
+     margin: 12px -12px -16px -14px;
+     padding: 10px 12px 12px 14px;
+     background-color: var(--zs-surface);
+     border-top: 1px solid var(--zs-border);
+   }
+ 
+   .zs-toc-actions span {
+     flex-basis: 100%;
+     color: var(--zs-text);
+     font-size: 13px;
+     font-weight: 700;
+   }
+ 
+   .zs-toc-actions button {
+     flex: 1 1 0;
+     padding: 6px 8px;
+     color: var(--zs-accent-strong);
+     background-color: var(--zs-surface-muted);
+     border: 1px solid var(--zs-border);
+     border-radius: 6px;
+     font-size: 13px;
+     cursor: pointer;
+   }
+ 
+   .zs-toc-actions button:hover,
+   .zs-toc-actions button:focus-visible {
+     border-color: var(--zs-accent);
+   }
+ }
+ 
  /* 見出しリンクのコピーボタン */
  .zs-heading-link {
    position: absolute;
@@ -1355,6 +1398,17 @@ code:script.js
    empty.className = 'zs-toc-empty'
    empty.textContent = '見出しはありません'
    toc.append(title, list, empty)
+   // ページのダウンロード。狭い画面では Cosense がページメニューに拡張ボタンの一部しか出さないため、ここにも置く
+   const actions = document.createElement('div')
+   actions.className = 'zs-toc-actions'
+   actions.innerHTML = '<span>ページをダウンロード</span><button type="button" data-format="txt">Cosense 形式 (.txt)</button><button type="button" data-format="md">Markdown 形式 (.md)</button>'
+   actions.addEventListener('click', event => {
+     const format = event.target.closest('button')?.dataset.format
+     if (!format) return
+     setOpen(false)
+     document.dispatchEvent(new CustomEvent('zs:download', {detail: format}))
+   })
+   toc.append(actions)
  
    // スマホ幅でヘッダーに置く、目次を開くボタンと、開いている間に本文を覆う背景
    const toggle = document.createElement('button')
@@ -1936,6 +1990,422 @@ code:script.js
          console.error('[Cosense Zenn Style] /emoji の絵文字を読み込めませんでした', error)
        }
      }
+   })
+ }
+
+[#* ページのダウンロード]
+ ページメニューの「ダウンロード」から、表示中のページを Cosense 形式（.txt）か Markdown 形式（.md）で保存する
+ Markdown 形式は、ブラウザ内で Cosense の記法を Markdown に変換してから保存する（見出しは目次と同じ規則で判定し、コードブロックは Zenn と同じ `言語:ファイル名` の形式にする）
+ 狭い画面では Cosense がページメニューの拡張ボタンを一部しか表示しないため、スマホの目次メニューの下部にもダウンロードボタンを置く
+code:script.js
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   // Material Symbols（Apache License 2.0）の download アイコン
+   const DOWNLOAD_ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path fill="#1f1f1f" d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>')}`
+ 
+   const DECO = /^\[([!"#%&'()*+,\-./{|}<>_~]+) ((?:\[[^[\]]+\]|[^\]])+)\]/
+   const BRACKET = /^\[([^[\]]+)\]/
+   const URL_ONLY = /^https?:\/\/\S+$/
+   const IMAGE_URL = /^https?:\/\/\S+\.(?:png|jpe?g|gif|svg|webp|avif|bmp)(?:[?#]\S*)?$/i
+   const GYAZO_URL = /^https:\/\/(?:i\.)?gyazo\.com\/[0-9a-f]{32}(?:\/raw|\.\w+)?$/i
+   const ICON = /^(.+)\.icon(?:\*(\d+))?$/
+   const TASK = /^\[([_x])\](?:\s+|$)/
+   const MAP = /^([NS])(\d+(?:\.\d+)?),([EW])(\d+(?:\.\d+)?)(?:,Z(\d+))?(?:\s+(.+))?$/
+ 
+   const indentOf = text => /^[ \t]*/.exec(text)[0].length
+ 
+   // ---- Cosense の記法を読み取る ----
+ 
+   // 1 行分の文字列を、記法ごとのノードに分ける
+   const parseInline = text => {
+     const nodes = []
+     let plain = ''
+     const push = node => {
+       if (plain) nodes.push({type: 'text', text: plain})
+       plain = ''
+       nodes.push(node)
+     }
+     let index = 0
+     while (index < text.length) {
+       const rest = text.slice(index)
+       const char = text[index]
+       let match
+       if (char === '`') {
+         const end = text.indexOf('`', index + 1)
+         if (end > index) {
+           push({type: 'code', text: text.slice(index + 1, end)})
+           index = end + 1
+           continue
+         }
+       } else if (char === '[') {
+         const token = parseBracket(rest)
+         if (token) {
+           push(token.node)
+           index += token.length
+           continue
+         }
+       } else if (char === '#' && (index === 0 || /\s/.test(text[index - 1])) && (match = /^#(\S+)/.exec(rest))) {
+         push({type: 'hashtag', page: match[1]})
+         index += match[0].length
+         continue
+       } else if (char === 'h' && (match = /^https?:\/\/[^\s　]+/.exec(rest))) {
+         push({type: 'url', url: match[0]})
+         index += match[0].length
+         continue
+       }
+       plain += char
+       index += 1
+     }
+     if (plain) nodes.push({type: 'text', text: plain})
+     return nodes
+   }
+ 
+   const parseBracket = rest => {
+     if (rest.startsWith('[[')) {
+       const end = rest.indexOf(']]', 2)
+       const content = end > 2 ? rest.slice(2, end) : ''
+       if (content && !/[[\]]/.test(content)) return {node: classifyStrong(content), length: end + 2}
+     }
+     if (rest.startsWith('[$ ')) {
+       // 数式の中の [ ] は、対応する組を数えて読み飛ばす
+       let depth = 0
+       for (let index = 0; index < rest.length; index++) {
+         if (rest[index] === '[') depth += 1
+         else if (rest[index] === ']' && --depth === 0) {
+           return {node: {type: 'formula', text: rest.slice(3, index).trim()}, length: index + 1}
+         }
+       }
+     }
+     let match = DECO.exec(rest)
+     if (match) return {node: {type: 'deco', chars: match[1], children: parseInline(match[2])}, length: match[0].length}
+     match = BRACKET.exec(rest)
+     if (match) return {node: classifyBracket(match[1]), length: match[0].length}
+     return null
+   }
+ 
+   const isImage = url => IMAGE_URL.test(url) || GYAZO_URL.test(url)
+ 
+   // [[...]] は太字。中身がアイコンや画像のときは大きく表示する記法
+   const classifyStrong = content => {
+     const icon = ICON.exec(content)
+     if (icon) return {type: 'icon', page: icon[1], times: 1}
+     if (URL_ONLY.test(content) && isImage(content)) return {type: 'image', src: content}
+     return {type: 'strong', children: [{type: 'text', text: content}]}
+   }
+ 
+   const classifyBracket = content => {
+     if (!content.trim()) return {type: 'text', text: content}
+     let match = ICON.exec(content)
+     if (match) return {type: 'icon', page: match[1], times: Math.min(Number(match[2] ?? 1), 20)}
+     match = MAP.exec(content)
+     if (match) {
+       const lat = (match[1] === 'S' ? '-' : '') + match[2]
+       const lng = (match[3] === 'W' ? '-' : '') + match[4]
+       return {type: 'map', lat, lng, zoom: match[5] ?? '14', name: match[6] ?? `${match[1]}${match[2]},${match[3]}${match[4]}`}
+     }
+     if (URL_ONLY.test(content)) return isImage(content) ? {type: 'image', src: content} : {type: 'url', url: content}
+     match = /^(https?:\/\/\S+)\s+(.+)$/.exec(content) ?? /^(.+?)\s+(https?:\/\/\S+)$/.exec(content)
+     if (match) {
+       const [url, label] = URL_ONLY.test(match[1]) ? [match[1], match[2]] : [match[2], match[1]]
+       if (isImage(url) && URL_ONLY.test(label)) return {type: 'image', src: url, href: label}
+       if (isImage(label) && URL_ONLY.test(label)) return {type: 'image', src: label, href: url}
+       return {type: 'urlLink', url, text: label}
+     }
+     if (content.startsWith('/')) return {type: 'projectLink', path: content}
+     return {type: 'link', page: content}
+   }
+ 
+   // ---- Markdown へ書き出す ----
+ 
+   const createWriter = ({project, origin}) => {
+     // Markdown のリンク先で問題になる空白・括弧だけをエスケープする
+     const destination = url => url.replace(/[\s()<>]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`)
+     const pageUrl = (projectName, page) =>
+       destination(`${origin}/${encodeURIComponent(projectName)}/${encodeURIComponent(page.replace(/ /g, '_'))}`)
+     const projectUrl = path => {
+       const [, projectName, ...page] = path.split('/')
+       return page.length
+         ? pageUrl(projectName, page.join('/'))
+         : destination(`${origin}/${encodeURIComponent(projectName)}`)
+     }
+     const iconUrl = page => {
+       const match = /^\/([^/]+)\/(.+)$/.exec(page)
+       const [projectName, title] = match ? [match[1], match[2]] : [project, page]
+       return destination(`${origin}/api/pages/${encodeURIComponent(projectName)}/${encodeURIComponent(title)}/icon`)
+     }
+ 
+     // 書式として解釈される記号をエスケープする
+     const escapeText = (text, atStart = false) => {
+       let result = text
+         .replace(/\\(?=[!-/:-@[-`{-~])/g, '\\\\')
+         .replace(/[`*[\]<$~]/g, '\\$&')
+         .replace(/&(?=#?\w+;)/g, '&amp;')
+         .replace(/_/g, (char, offset, all) =>
+           /[A-Za-z0-9]/.test(all[offset - 1] ?? '') && /[A-Za-z0-9]/.test(all[offset + 1] ?? '') ? char : '\\_')
+       if (atStart) {
+         result = result
+           .replace(/^(#{1,6})(?=\s|$)/, '\\$1')
+           .replace(/^[>+=-]/, '\\$&')
+           .replace(/^(\d{1,9})([.)])(?=\s|$)/, '$1\\$2')
+       }
+       return result
+     }
+ 
+     const codeSpan = text => {
+       const longest = Math.max(0, ...(text.match(/`+/g) ?? []).map(run => run.length))
+       const fence = '`'.repeat(longest + 1)
+       const padding = text.startsWith('`') || text.endsWith('`') ? ' ' : ''
+       return `${fence}${padding}${text}${padding}${fence}`
+     }
+ 
+     const renderNodes = (nodes, context = {}) =>
+       nodes.map((node, index) => renderNode(node, {...context, atStart: Boolean(context.atStart) && index === 0})).join('')
+ 
+     const renderNode = (node, context) => {
+       switch (node.type) {
+         case 'text':
+           return escapeText(node.text, context.atStart)
+         case 'code':
+           return codeSpan(node.text)
+         case 'formula':
+           return `$${node.text}$`
+         case 'strong':
+           return wrap(renderNodes(node.children), '**')
+         case 'deco': {
+           let inner = renderNodes(node.children)
+           if (node.chars.includes('/')) inner = wrap(inner, '*')
+           if (node.chars.includes('*') || node.chars.includes('!')) inner = wrap(inner, '**')
+           if (node.chars.includes('-')) inner = wrap(inner, '~~')
+           return inner
+         }
+         case 'link':
+           return `[${escapeText(node.page)}](${pageUrl(project, node.page)})`
+         case 'projectLink':
+           return `[${escapeText(node.path)}](${projectUrl(node.path)})`
+         case 'hashtag':
+           return `[#${escapeText(node.page)}](${pageUrl(project, node.page)})`
+         case 'url':
+           // 1 行に URL だけがあるときは、Zenn などでリンクカードになるようにそのまま書く
+           if (context.wholeLine) return node.url
+           return /[\s<>]/.test(node.url) ? `[${escapeText(node.url)}](${destination(node.url)})` : `<${node.url}>`
+         case 'urlLink':
+           return `[${escapeText(node.text)}](${destination(node.url)})`
+         case 'image': {
+           const src = /^https:\/\/gyazo\.com\/[0-9a-f]{32}$/i.test(node.src) ? `${node.src}/raw` : node.src
+           const image = `![](${destination(src)})`
+           return node.href ? `[${image}](${destination(node.href)})` : image
+         }
+         case 'icon': {
+           const name = node.page.split('/').pop()
+           return `![${escapeText(name)}](${iconUrl(node.page)})`.repeat(node.times)
+         }
+         case 'map':
+           return `[${escapeText(node.name)}](https://www.google.com/maps/@${node.lat},${node.lng},${node.zoom}z)`
+       }
+       return ''
+     }
+ 
+     // 前後の空白を記号の外に出して、**text** の形を崩さない
+     const wrap = (text, mark) => {
+       const [, before, body, after] = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)
+       return body ? `${before}${mark}${body}${mark}${after}` : text
+     }
+ 
+     return {escapeText, codeSpan, renderNodes, wrap}
+   }
+ 
+   // 太字だけの行を見出しとして扱う（ページ内目次と同じ規則）
+   const findHeadings = blocks => {
+     const candidates = []
+     blocks.forEach((block, index) => {
+       if (block.type !== 'line') return
+       const nodes = parseInline(block.content).filter(node => node.type !== 'text' || node.text.trim() !== '')
+       if (nodes.length !== 1) return
+       const [node] = nodes
+       if (node.type === 'strong') candidates.push({index, node, level: 1, hasHash: false})
+       if (node.type === 'deco' && node.chars.includes('*')) {
+         candidates.push({index, node, level: node.chars.split('*').length - 1, hasHash: node.chars.includes('#')})
+       }
+     })
+     const headings = candidates.some(heading => heading.hasHash)
+       ? candidates.filter(heading => heading.hasHash)
+       : candidates
+     const top = Math.max(...headings.map(heading => heading.level))
+     return new Map(headings.map(heading => [heading.index, {node: heading.node, level: Math.min(top - heading.level, 4) + 2}]))
+   }
+ 
+   const parseCodeName = name => {
+     let match = /^(.*?)\s*\(([^()\s]+)\)$/.exec(name)
+     if (match) return {lang: match[2], filename: match[1]}
+     match = /\.([^.\s]+)$/.exec(name)
+     if (match) return {lang: match[1], filename: name}
+     return {lang: name, filename: ''}
+   }
+ 
+   // Cosense のページ（1 行目がタイトル）を Markdown に変換する
+   const cosenseToMarkdown = (texts, options) => {
+     const writer = createWriter(options)
+     const {escapeText, codeSpan, renderNodes, wrap} = writer
+     const [title = '', ...body] = texts
+ 
+     // コードブロックと表は、まとまりとして読み取る
+     const blocks = []
+     for (let index = 0; index < body.length;) {
+       const indent = indentOf(body[index])
+       const content = body[index].slice(indent)
+       const code = /^code:(.+)$/.exec(content)
+       const table = /^table:(.*)$/.exec(content)
+       if (!code && !table) {
+         blocks.push({type: 'line', indent, content})
+         index += 1
+         continue
+       }
+       let end = index + 1
+       while (end < body.length && indentOf(body[end]) > indent) end += 1
+       const rows = body.slice(index + 1, end).map(row => row.slice(indent + 1))
+       blocks.push(code
+         ? {type: 'code', indent, name: code[1].trim(), rows}
+         : {type: 'table', indent, title: table[1].trim(), rows})
+       index = end
+     }
+     const headings = findHeadings(blocks)
+ 
+     const renderCode = block => {
+       const {lang, filename} = parseCodeName(block.name)
+       const longest = Math.max(0, ...block.rows.flatMap(row => (row.match(/`+/g) ?? []).map(run => run.length)))
+       const fence = '`'.repeat(Math.max(3, longest + 1))
+       return [fence + (filename ? `${lang}:${filename}` : lang), ...block.rows, fence]
+     }
+ 
+     const renderTable = block => {
+       const lines = block.title ? [`**${escapeText(block.title)}**`] : []
+       const rows = block.rows
+         .filter(row => row.trim() !== '')
+         .map(row => row.split('\t').map(cell => renderNodes(parseInline(cell.trim())).replace(/\|/g, '\\|')))
+       const width = Math.max(0, ...rows.map(row => row.length))
+       if (width === 0) return lines
+       const cells = row => [...row, ...Array(width - row.length).fill('')].join(' | ')
+       const [head, ...rest] = rows
+       return [...lines, ...(lines.length ? [''] : []),
+         `| ${cells(head)} |`, `|${' --- |'.repeat(width)}`, ...rest.map(row => `| ${cells(row)} |`)]
+     }
+ 
+     // 1 行分の中身を {kind, lines} にする
+     const renderLine = (block, index, inList) => {
+       const heading = headings.get(index)
+       if (heading) {
+         const text = renderNodes(heading.node.children).trim()
+         if (text) return {kind: 'heading', lines: [`${'#'.repeat(heading.level)} ${text}`]}
+       }
+       const {content} = block
+       if (content.startsWith('>')) {
+         const quote = renderNodes(parseInline(content.slice(1).replace(/^ /, '')), {atStart: true})
+         return {kind: 'quote', lines: [quote ? `> ${quote}` : '>']}
+       }
+       if (/^[$%] \S/.test(content)) return {kind: 'para', lines: [codeSpan(content)]}
+       const nodes = parseInline(content)
+       if (nodes.length === 1 && nodes[0].type === 'formula' && !inList) {
+         return {kind: 'math', lines: ['$$', nodes[0].text, '$$']}
+       }
+       return {kind: 'para', lines: [renderNodes(nodes, {atStart: true, wholeLine: nodes.length === 1})]}
+     }
+ 
+     const output = [`# ${escapeText(title)}`]
+     let lastKind = 'heading'
+     let listOffsets = [] // 各階層の箇条書きで、本文が始まる位置
+     const emit = (kind, lines) => {
+       if (!['para', 'list', 'quote'].includes(kind) || kind !== lastKind) output.push('')
+       output.push(...lines)
+       lastKind = kind
+       if (kind !== 'list') listOffsets = []
+     }
+ 
+     blocks.forEach((block, index) => {
+       if (block.type === 'line' && block.content === '') {
+         lastKind = 'blank'
+         return
+       }
+       // [_] と [x] で始まる行（この UserCSS でチェックボックスとして表示する記法）は、タスクリストにする
+       const task = block.type === 'line' && !headings.has(index) && TASK.exec(block.content)
+       const inList = block.indent > 0 || Boolean(task)
+       let rendered
+       if (block.type === 'code') rendered = {kind: 'code', lines: renderCode(block)}
+       else if (block.type === 'table') rendered = {kind: 'table', lines: renderTable(block)}
+       else rendered = renderLine(block, index, inList)
+       if (rendered.lines.length === 0) return
+       if (!inList) {
+         emit(rendered.kind, rendered.lines)
+         return
+       }
+ 
+       // インデントされた行は箇条書きにする。階層は 1 段ずつしか深くしない
+       const depth = Math.min(Math.max(block.indent - 1, 0), listOffsets.length)
+       const numbered = block.type === 'line' && rendered.kind === 'para' && /^(\d{1,9})\. (.*)$/.exec(block.content)
+       let lines = rendered.lines
+       let marker = '-'
+       if (task) {
+         const rest = renderNodes(parseInline(block.content.slice(task[0].length)))
+         lines = [`[${task[1] === 'x' ? 'x' : ' '}]${rest ? ` ${rest}` : ''}`]
+       } else if (numbered) {
+         marker = `${numbered[1]}.`
+         lines = [renderNodes(parseInline(numbered[2]), {atStart: true})]
+       }
+       const prefix = `${' '.repeat(depth === 0 ? 0 : listOffsets[depth - 1])}${marker} `
+       const offsets = listOffsets.slice(0, depth)
+       emit('list', lines.map((line, lineIndex) => {
+         if (lineIndex === 0) return prefix + line
+         return line === '' ? '' : ' '.repeat(prefix.length) + line
+       }))
+       listOffsets = [...offsets, prefix.length]
+     })
+ 
+     return `${output.join('\n').trim()}\n`
+   }
+ 
+   // ---- ページメニュー ----
+ 
+   const toFileName = (title, extension) => {
+     const name = title.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/^\.+/, '_').trim().slice(0, 120)
+     return `${name || 'untitled'}.${extension}`
+   }
+ 
+   const save = (text, fileName, type) => {
+     const url = URL.createObjectURL(new Blob([text], {type}))
+     const link = document.createElement('a')
+     link.href = url
+     link.download = fileName
+     document.body.append(link)
+     link.click()
+     link.remove()
+     setTimeout(() => URL.revokeObjectURL(url), 10000)
+   }
+ 
+   const download = format => {
+     const lines = (scrapbox.Page.lines ?? []).map(line => line.text)
+     if (lines.length === 0) return
+     const title = scrapbox.Page.title ?? lines[0]
+     if (format === 'md') {
+       const markdown = cosenseToMarkdown(lines, {project: scrapbox.Project.name, origin: location.origin})
+       save(markdown, toFileName(title, 'md'), 'text/markdown;charset=utf-8')
+     } else {
+       save(lines.join('\n'), toFileName(title, 'txt'), 'text/plain;charset=utf-8')
+     }
+   }
+ 
+   // スマホの目次メニューにあるダウンロードボタンから呼ばれる
+   document.addEventListener('zs:download', event => download(event.detail))
+ 
+   scrapbox.PageMenu.addMenu({
+     title: 'ダウンロード',
+     image: DOWNLOAD_ICON
+   })
+   scrapbox.PageMenu('ダウンロード').addItem({
+     title: 'Cosense 形式 (.txt)',
+     onClick: () => download('txt')
+   })
+   scrapbox.PageMenu('ダウンロード').addItem({
+     title: 'Markdown 形式 (.md)',
+     onClick: () => download('md')
    })
  }
 
