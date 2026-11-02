@@ -370,8 +370,162 @@ code:style.css
  マイページの UserScript から GitHub Raw への `fetch()` は行わない。
 
 [*# X（Twitter）ポスト埋め込み]
- X（Twitter）ポスト埋め込みは、X の Syndication API から投稿データを取得し、iframe を使わない静的なカードとして描画する Tampermonkey 用の `cosense_x_post_embed_tampermonkey.user.js` 側で CSS と JavaScript を管理する。
- ポスト URL だけの行を対象とし、通常はリプライ元を含め、`?conversation=none` の指定時だけリプライ元を非表示にする。
+ ポスト URL だけの行の下に、投稿者・本文・画像を載せたカードを表示する（UserScript で描画する）
+ Tampermonkey 用の `cosense_x_post_embed_tampermonkey.user.js` を入れているときは、日時やリプライ元も表示できるそちらのカードを優先する
+code:style.css
+ .line > .zs-x-embed {
+   display: block;
+   box-sizing: border-box;
+   width: min(100%, 550px);
+   margin: 0.65em auto 0.9em;
+   font-size: 15px;
+   line-height: 1.6;
+   letter-spacing: normal;
+   white-space: normal;
+ }
+ 
+ /* 取得できないとき・編集中・Tampermonkey 版があるときは、カードを出さずに URL を表示する */
+ .line > .zs-x-embed:not(.is-ready),
+ .line.cursor-line > .zs-x-embed,
+ .line:has(> .x-static-embed-host) > .zs-x-embed {
+   display: none;
+ }
+ .line:has(> .zs-x-embed.is-ready):not(.cursor-line, :has(> .x-static-embed-host)) > .text a.link {
+   display: none;
+ }
+ 
+ .zs-x-card {
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+   padding: 14px 16px;
+   color: var(--zs-text);
+   background-color: var(--zs-surface);
+   border: 1px solid var(--zs-border);
+   border-radius: 12px;
+   overflow-wrap: anywhere;
+ }
+ 
+ .zs-x-card a {
+   color: var(--zs-accent-strong);
+   text-decoration: none;
+ }
+ 
+ .zs-x-card a:hover {
+   text-decoration: underline;
+ }
+ 
+ .zs-x-header {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   min-width: 0;
+ }
+ 
+ .zs-x-avatar {
+   display: flex;
+   flex: none;
+   align-items: center;
+   justify-content: center;
+   width: 40px;
+   height: 40px;
+   color: #fff;
+   background-color: var(--zs-accent);
+   border-radius: 50%;
+   font-size: 17px;
+   font-weight: 700;
+ }
+ 
+ .zs-x-card a.zs-x-names {
+   display: flex;
+   flex-direction: column;
+   min-width: 0;
+   color: var(--zs-text);
+   line-height: 1.35;
+ }
+ 
+ .zs-x-name,
+ .zs-x-screen-name {
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+ }
+ 
+ .zs-x-name {
+   font-weight: 700;
+ }
+ 
+ .zs-x-screen-name {
+   color: var(--zs-text-muted);
+   font-size: 0.9em;
+ }
+ 
+ .zs-x-logo {
+   flex: none;
+   width: 20px;
+   height: 20px;
+   margin-left: auto;
+   fill: var(--zs-text);
+ }
+ 
+ .zs-x-text {
+   margin: 0;
+   white-space: pre-wrap;
+ }
+ 
+ .zs-x-media {
+   display: grid;
+   grid-template-columns: repeat(2, 1fr);
+   gap: 2px;
+   overflow: hidden;
+   border: 1px solid var(--zs-border);
+   border-radius: 12px;
+ }
+ 
+ .zs-x-media[data-count="1"] {
+   grid-template-columns: 1fr;
+ }
+ 
+ .zs-x-media[data-count="3"] .zs-x-media-item:first-child {
+   grid-row: span 2;
+ }
+ 
+ .zs-x-media-item {
+   display: block;
+   min-width: 0;
+ }
+ 
+ .zs-x-media img {
+   display: block;
+   width: 100%;
+   height: 100%;
+   aspect-ratio: 16 / 9;
+   object-fit: cover;
+ }
+ 
+ .zs-x-media[data-count="1"] img {
+   height: auto;
+   max-height: 420px;
+   aspect-ratio: auto;
+ }
+ 
+ .zs-x-card a.zs-x-footer {
+   padding-top: 8px;
+   border-top: 1px solid var(--zs-border);
+   font-size: 0.9em;
+   font-weight: 700;
+ }
+ 
+ @media (max-width: 767px) {
+   .line > .zs-x-embed {
+     width: 100%;
+     font-size: 14px;
+   }
+ 
+   .zs-x-card {
+     padding: 12px 14px;
+   }
+ }
 
 [*# コードブロック・インラインコード]
 code:style.css
@@ -1259,10 +1413,174 @@ code:style.css
 
 [**# UserScript]
 [#* GitHub ファイル埋め込み]
- Cosense の CSP で GitHub Raw への通信が拒否されるため、この機能は Tampermonkey 用 userscript で実行する。
+ Cosense の CSP で GitHub（github.com・raw.githubusercontent.com）への通信が拒否され、ファイルの中身を中継する Cosense の API もないため、この機能は Tampermonkey 用 userscript で実行する。
 
 [#* X（Twitter）ポスト埋め込み]
- Cosense の CSP で X の公式ウィジェット（iframe）や投稿データの取得が制限されるため、この機能は Tampermonkey 用 userscript で実行する。
+ X の公式ウィジェット（iframe）や X の API は Cosense の CSP で使えないため、Cosense がポスト URL の貼り付け時に使う API（/api/embed-text/twitter）から投稿者・本文・画像を取得して表示する
+code:script.js
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   // ポスト URL だけの行（[ ] で囲んだ形も含む）
+   const POST_LINE = /^\s*\[?(https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/(\w{1,15})\/status(?:es)?\/(\d+)\S*?)\]?\s*$/
+   const CACHE_PREFIX = 'zs-x-post:'
+   const X_LOGO = 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'
+   const TOKEN = /https?:\/\/[^\s]+|@\w{1,15}|#[\p{L}\p{N}_]+/gu
+ 
+   // Cosense がポスト URL の貼り付け時に使う API（同じオリジンなので CSP に妨げられない）
+   const requests = new Map()
+   const fetchPost = (id, url) => {
+     if (!requests.has(id)) {
+       requests.set(id, (async () => {
+         try {
+           const cached = sessionStorage.getItem(CACHE_PREFIX + id)
+           if (cached) return JSON.parse(cached)
+         } catch {}
+         const response = await fetch(`/api/embed-text/twitter?url=${encodeURIComponent(url)}`, {method: 'POST'})
+         if (!response.ok) return null
+         const data = await response.json()
+         if (!data?.description && !data?.images?.length) return null
+         try {
+           sessionStorage.setItem(CACHE_PREFIX + id, JSON.stringify(data))
+         } catch {}
+         return data
+       })().catch(() => null))
+     }
+     return requests.get(id)
+   }
+ 
+   const element = (tag, className, text) => {
+     const node = document.createElement(tag)
+     node.className = className
+     if (text != null) node.textContent = text
+     return node
+   }
+ 
+   const externalLink = (className, href, text) => {
+     const link = element('a', className, text)
+     link.href = href
+     link.target = '_blank'
+     link.rel = 'noopener noreferrer'
+     return link
+   }
+ 
+   // 本文の URL・@ユーザー名・#ハッシュタグをリンクにする
+   const appendText = (parent, text) => {
+     let last = 0
+     for (const match of text.matchAll(TOKEN)) {
+       const [token] = match
+       const before = text[match.index - 1] ?? ''
+       if (token[0] !== 'h' && /[\p{L}\p{N}_]/u.test(before)) continue
+       parent.append(text.slice(last, match.index))
+       if (token[0] === '@') parent.append(externalLink('', `https://x.com/${token.slice(1)}`, token))
+       else if (token[0] === '#') parent.append(externalLink('', `https://x.com/hashtag/${encodeURIComponent(token.slice(1))}`, token))
+       else parent.append(externalLink('', token, token.replace(/^https?:\/\//, '')))
+       last = match.index + token.length
+     }
+     parent.append(text.slice(last))
+   }
+ 
+   const createCard = (data, postUrl, fallbackName) => {
+     const screenName = data.screenName || fallbackName
+     const displayName = /^(.*) \(@\w+\)$/.exec(data.userName ?? '')?.[1] || screenName
+     const card = element('div', 'zs-x-card')
+ 
+     const header = element('div', 'zs-x-header')
+     const avatar = element('span', 'zs-x-avatar', [...displayName.trim()][0]?.toUpperCase() ?? 'X')
+     const names = externalLink('zs-x-names', `https://x.com/${screenName}`)
+     names.append(element('span', 'zs-x-name', displayName), element('span', 'zs-x-screen-name', `@${screenName}`))
+     const logo = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+     logo.setAttribute('class', 'zs-x-logo')
+     logo.setAttribute('viewBox', '0 0 24 24')
+     logo.setAttribute('aria-hidden', 'true')
+     logo.innerHTML = `<path d="${X_LOGO}"/>`
+     header.append(avatar, names, logo)
+     card.append(header)
+ 
+     if (data.description) {
+       const text = element('p', 'zs-x-text')
+       appendText(text, data.description)
+       card.append(text)
+     }
+ 
+     const images = (data.images ?? []).slice(0, 4)
+     if (images.length > 0) {
+       const media = element('div', 'zs-x-media')
+       media.dataset.count = images.length
+       for (const src of images) {
+         const link = externalLink('zs-x-media-item', postUrl)
+         const image = document.createElement('img')
+         image.src = src
+         image.alt = ''
+         image.loading = 'lazy'
+         image.decoding = 'async'
+         image.referrerPolicy = 'no-referrer'
+         link.append(image)
+         media.append(link)
+       }
+       card.append(media)
+     }
+ 
+     card.append(externalLink('zs-x-footer', postUrl, 'X でポストを見る'))
+     return card
+   }
+ 
+   // Tampermonkey 版（cosense_x_post_embed_tampermonkey.user.js）が動いているときは、そちらに任せる
+   let hasTampermonkeyVersion = false
+   const detectTampermonkeyVersion = () => {
+     hasTampermonkeyVersion ||= [...document.querySelectorAll('style')]
+       .some(style => style.textContent.includes('.x-static-card'))
+     return hasTampermonkeyVersion
+   }
+ 
+   const render = () => {
+     const targets = new Map()
+     if (scrapbox.Layout === 'page' && !detectTampermonkeyVersion()) {
+       for (const line of scrapbox.Page.lines ?? []) {
+         if (line.codeBlock || line.tableBlock) continue
+         const match = POST_LINE.exec(line.text)
+         if (match) targets.set(`L${line.id}`, {screenName: match[2], id: match[3]})
+       }
+     }
+ 
+     // ポスト URL だけの行でなくなったときは、カードを消す
+     for (const host of document.querySelectorAll('.zs-x-embed')) {
+       const target = targets.get(host.parentElement?.id)
+       if (!target || target.id !== host.dataset.id) host.remove()
+     }
+ 
+     for (const [lineId, target] of targets) {
+       const line = document.getElementById(lineId)
+       if (!line || line.querySelector(':scope > .zs-x-embed')) continue
+       const host = element('div', 'zs-x-embed')
+       host.dataset.id = target.id
+       const text = line.querySelector(':scope > .text')
+       if (text) text.after(host)
+       else line.append(host)
+       const postUrl = `https://x.com/${target.screenName}/status/${target.id}`
+       fetchPost(target.id, postUrl).then(data => {
+         if (!data || !host.isConnected) return
+         host.replaceChildren(createCard(data, postUrl, target.screenName))
+         host.classList.add('is-ready')
+       })
+     }
+   }
+ 
+   let renderTimer = 0
+   const scheduleRender = (delay = 300) => {
+     clearTimeout(renderTimer)
+     renderTimer = setTimeout(render, delay)
+   }
+ 
+   // Tampermonkey 版があとから読み込まれたときは、こちらのカードを消して譲る
+   new MutationObserver(() => {
+     if (!hasTampermonkeyVersion && detectTampermonkeyVersion()) scheduleRender(0)
+   }).observe(document.head, {childList: true})
+ 
+   scrapbox.on('lines:changed', () => scheduleRender())
+   scrapbox.on('page:changed', () => scheduleRender(0))
+   scrapbox.on('layout:changed', () => scheduleRender(0))
+   scheduleRender(0)
+ }
 
 [#* ページ内目次の自動生成]
 	from: [/daiiz/ページの見出しを作るUserScript]
