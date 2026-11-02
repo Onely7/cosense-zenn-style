@@ -380,12 +380,12 @@ code:style.css
 [*# GitHub ファイル埋め込み]
  GitHub 埋め込みは、Cosense の CSP 制約を避けるため、Tampermonkey 用の `cosense_github_embed_tampermonkey.user.js` 側で CSS と JavaScript を管理する
  マイページの UserScript から GitHub Raw への `fetch()` は行わない
- カードの幅と、コードを表示する部分の最大の高さは、[*# 配色と寸法] の `--zs-github-embed-width` と `--zs-github-embed-max-height` で変えられる
+ カードの幅と、コードを表示する部分の最大の高さは、「配色と寸法」の `--zs-github-embed-width` と `--zs-github-embed-max-height` で変えられる
 
 [*# X（Twitter）ポスト埋め込み]
  ポスト URL だけの行の下に、投稿者・本文・画像を載せたカードを表示する（UserScript で描画する）
  Tampermonkey 用の `cosense_x_post_embed_tampermonkey.user.js` を入れているときは、日時やリプライ元も表示できるそちらのカードを優先する
- カードの幅は [*# 配色と寸法] の `--zs-x-embed-width` で変えられる（Tampermonkey 版のカードにも使う）
+ カードの幅は「配色と寸法」の `--zs-x-embed-width` で変えられる（Tampermonkey 版のカードにも使う）
 code:style.css
  .line > .zs-x-embed {
    display: block;
