@@ -1602,6 +1602,7 @@ code:script.js
 	from: [/daiiz/ページの見出しを作るUserScript]
  `[*# 見出し]` のように `#` を含む太字だけの行を見出しとして、`*` の数に応じた階層付きで一覧にする
  `#` を含む見出しがないページでは、`[** 見出し]` のように太字だけの行を使う
+ スマホ幅（767px 以下）では、ヘッダーのボタンから目次を開けるため、ページメニューには見出しメニューを追加しない（狭い画面では Cosense がページメニューの拡張ボタンを一部しか表示しないため、ほかのボタンを優先する）
 code:script.js
  /*
   * ページ内の見出しを集める。
@@ -1686,26 +1687,36 @@ code:script.js
    if (line) window.scrollTo({top: line.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth'})
  }
  
- scrapbox.PageMenu.addMenu({
-   title: '見出し',
-   image: 'https://gyazo.com/da0408108eda84e56a587630be5e4524/raw',
-   onClick: () => {
-     const menu = scrapbox.PageMenu('見出し')
-     menu.removeAllItems()
-     const headings = getHeadings()
-     if (headings.length === 0) {
-       menu.addItem({title: '見出しはありません', onClick: () => {}})
-       return
-     }
-     for (const heading of headings) {
-       menu.addItem({
-         title: '　'.repeat(heading.depth) + heading.label,
-         image: heading.image ?? undefined,
-         onClick: () => jumpToLine(heading.id)
-       })
-     }
+ // 画面幅が 768px 以上になったときに、見出しメニューを追加する（追加したメニューは消せないため、一度だけ）
+ {
+   const wideScreen = matchMedia('(min-width: 768px)')
+   const addHeadingMenu = () => {
+     if (!wideScreen.matches) return
+     wideScreen.removeEventListener('change', addHeadingMenu)
+     scrapbox.PageMenu.addMenu({
+       title: '見出し',
+       image: 'https://gyazo.com/da0408108eda84e56a587630be5e4524/raw',
+       onClick: () => {
+         const menu = scrapbox.PageMenu('見出し')
+         menu.removeAllItems()
+         const headings = getHeadings()
+         if (headings.length === 0) {
+           menu.addItem({title: '見出しはありません', onClick: () => {}})
+           return
+         }
+         for (const heading of headings) {
+           menu.addItem({
+             title: '　'.repeat(heading.depth) + heading.label,
+             image: heading.image ?? undefined,
+             onClick: () => jumpToLine(heading.id)
+           })
+         }
+       }
+     })
    }
- })
+   wideScreen.addEventListener('change', addHeadingMenu)
+   addHeadingMenu()
+ }
 
 [#* 追従する目次]
  画面幅が 1300px 以上のとき、見出しが 2 つ以上あるページでは本文の右に目次を表示し、スクロールに合わせて現在の見出しを強調する
