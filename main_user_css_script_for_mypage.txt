@@ -3242,31 +3242,70 @@ code:script.js
      return cells.map(value => value.trim())
    }
  
-   // Markdown の文書を、Cosense のタイトルと本文の行にする
-   const markdownToCosense = (markdown, fallbackTitle = '') => {
-     let text = markdown.replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+   // GitHub の注記（> [!NOTE] など）の種類と、引用の 1 行目に太字で書く名前
+   const ALERT_NAMES = {note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution'}
+ 
+   // 引用の中身を Cosense の行にする。Cosense の引用（> で始まる行）には 1 行の文しか書けないため、
+   // コードブロックと表は引用の外に出し、箇条書きは全角の空白で字下げした引用の行にする
+   const quoteLines = (inner, options) => {
+     const lines = [...inner]
+     const items = []
+     // GitHub の注記（> [!NOTE] など）は、種類の名前（[!TIP] 見出し のように続けて書いた見出しがあれば、その見出し）を太字の行にする
+     const first = lines.findIndex(line => line.trim())
+     const alert = first >= 0 ? /^\s*\[!([A-Za-z]+)\][+-]?(?:[ \t]+(.*))?$/.exec(lines[first]) : null
+     if (alert) {
+       const type = alert[1].toLowerCase()
+       const name = plainText(alert[2] ?? '') || ALERT_NAMES[type] || type[0].toUpperCase() + type.slice(1)
+       items.push({line: `> [* ${name}]`, kind: 'quote'})
+       lines.splice(0, first + 1)
+     }
+     const {out, kinds} = convertBlocks(lines, {...options, takeTitle: false})
+     let levels = [] // 箇条書きの階層ごとの、引用の中での字下げの段数
+     out.forEach((line, index) => {
+       const kind = kinds[index]
+       if (kind !== 'list') levels = []
+       if (kind === 'code' || kind === 'table') {
+         items.push({line, kind})
+         return
+       }
+       let content = line.trim() ? line : ''
+       if (kind === 'heading') {
+         content = line.replace(/^\[\*+# ([\s\S]*)\]$/, '[* $1]')
+       } else if (kind === 'list') {
+         // 引用の中では、全角の空白で字下げした行に箇条書きの点が付く。
+         // 番号とチェックボックスの項目は字下げせず、点のない項目は 1 段以上字下げする
+         const [, spaces, rest] = /^( *)([\s\S]*)$/.exec(line)
+         const depth = spaces.length
+         let level = depth > 1 ? (levels[depth - 1] ?? depth - 2) + 1 : 0
+         if (level === 0 && !/^(?:\d+\. |\[[_x]\] )/.test(rest)) level = 1
+         levels[depth] = level
+         levels.length = depth + 1
+         content = `${'　'.repeat(level)}${rest}`
+       } else if (kind === 'quote') {
+         content = line.replace(/^\s*>[ \t]?/, '')
+       }
+       if (content) items.push({line: `> ${content}`, kind: 'quote'})
+       else if (items.length && items[items.length - 1].kind !== 'quote-blank') items.push({line: '>', kind: 'quote-blank'})
+     })
+     // 空の引用の行は、引用の文に挟まれているところだけに残し、引用の外に出したブロックの前後では空行にする
+     return items.flatMap((item, index) => {
+       if (item.kind !== 'quote-blank') return [item]
+       const before = items[index - 1]?.kind
+       const after = items[index + 1]?.kind
+       if (before === 'quote' && after === 'quote') return [item]
+       if (before && after) return [{line: '', kind: 'blank'}]
+       return []
+     })
+   }
+ 
+   // Markdown の行を、Cosense の行と、その行の種類（あとで空行を整えるときに使う）にする
+   const convertBlocks = (source, options) => {
+     const {definitions, tableName} = options
+     const inline = value => convertInline(value, definitions)
      let title = ''
  
-     // Zenn などの front matter（先頭の --- で囲んだ部分）は、title だけを使う
-     const front = /^---\n([\s\S]*?)\n(?:---|\.\.\.)[ \t]*(?:\n|$)/.exec(text)
-     if (front) {
-       const match = /^title:[ \t]*(.*)$/m.exec(front[1])
-       if (match) title = match[1].trim().replace(/^(["'])(.*)\1$/, '$2')
-       text = text.slice(front[0].length)
-     }
- 
-     // 参照形式のリンクの定義（[名前]: URL）を集めて、本文から取り除く
-     const definitions = new Map()
-     const source = text.split('\n').filter(line => {
-       const match = /^ {0,3}\[([^\]^][^\]]*)\]:\s*<?(\S+?)>?(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*$/.exec(line)
-       if (!match) return true
-       definitions.set(match[1].toLowerCase(), match[2])
-       return false
-     })
-     const inline = value => convertInline(value, definitions)
- 
      const out = []
-     const kinds = [] // out の各行の種類（あとで空行を整理するときに使う）
+     const kinds = []
      const emit = (line, kind) => {
        out.push(line)
        kinds.push(kind)
@@ -3279,12 +3318,11 @@ code:script.js
        let index = out.length - 1
        if (index >= 0 && out[index] === '') index -= 1
        const match = index >= 0 && kinds[index] === 'text' && /^\[\* ([^\]]+)\]$/.exec(out[index])
-       if (!match) return 'table'
+       if (!match) return tableName
        out.splice(index)
        kinds.splice(index)
        return match[1]
      }
- 
      for (let index = 0; index < source.length; index += 1) {
        const raw = source[index]
        const line = raw.replace(/[ \t]+$/, '')
@@ -3372,7 +3410,7 @@ code:script.js
          const content = (heading ? heading[2] ?? '' : line.trim()).trim()
          if (setext) index += 1
          const hasContent = out.some(value => value !== '')
-         if (level === 1 && !title && !hasContent) {
+         if (level === 1 && options.takeTitle && !title && !hasContent) {
            title = plainText(content)
            continue
          }
@@ -3444,11 +3482,17 @@ code:script.js
          continue
        }
  
-       // 引用
-       const quote = /^\s*>\s?(.*)$/.exec(line)
-       if (quote) {
-         const content = quote[1].replace(/^(?:>\s?)+/, '')
-         emit(`${' '.repeat(depth())}> ${inline(content)}`.replace(/> $/, '>'), 'quote')
+       // 引用（続く引用の行をまとめて変換する）
+       if (/^\s*>/.test(line)) {
+         const inner = []
+         let end = index
+         while (end < source.length && /^\s*>/.test(source[end])) {
+           inner.push(source[end].replace(/^\s*>[ \t]?/, ''))
+           end += 1
+         }
+         index = end - 1
+         const prefix = ' '.repeat(depth())
+         for (const item of quoteLines(inner, options)) emit(prefix + item.line, item.kind === 'quote-blank' ? 'quote' : item.kind)
          continue
        }
  
@@ -3474,8 +3518,11 @@ code:script.js
        for (const part of content.split(/<br\s*\/?>/i)) emit(prefix + inline(part.trim()), list.length ? 'list' : 'text')
      }
  
-     // 空行を整える。2 つ以上続く空行・見出しの直後・箇条書きの項目の間の空行は取り除き、
-     // コードブロックや表のすぐ後にインデントした行が続くときは、ブロックに取り込まれないように空行を入れる
+     return {title, out, kinds}
+   }
+ 
+   // 空行を整える（2 つ以上続く空行・見出しの直後・箇条書きの項目の間の空行を除き、コードブロックや表のあとに必要な空行を入れる）
+   const tidyLines = (out, kinds) => {
      const lines = []
      let previousKind = null
      let blockIndent = -1 // 直前のコードブロック・表の「code:」「table:」の行のインデント
@@ -3499,7 +3546,33 @@ code:script.js
        previousKind = kind
        pendingBlank = false
      })
-     return {title: title || fallbackTitle, lines}
+     return lines
+   }
+ 
+   // Markdown の文書を、Cosense のタイトルと本文の行にする
+   const markdownToCosense = (markdown, fallbackTitle = '') => {
+     let text = markdown.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
+     let title = ''
+ 
+     // Zenn などの front matter（先頭の --- で囲んだ部分）は、title だけを使う
+     const front = /^---\n([\s\S]*?)\n(?:---|\.\.\.)[ \t]*(?:\n|$)/.exec(text)
+     if (front) {
+       const match = /^title:[ \t]*(.*)$/m.exec(front[1])
+       if (match) title = match[1].trim().replace(/^(["'])(.*)\1$/, '$2')
+       text = text.slice(front[0].length)
+     }
+ 
+     // 参照形式のリンクの定義（[名前]: URL）を集めて、本文から取り除く
+     const definitions = new Map()
+     const source = text.split('\n').filter(line => {
+       const match = /^ {0,3}\[([^\]^][^\]]*)\]:\s*<?(\S+?)>?(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*$/.exec(line)
+       if (!match) return true
+       definitions.set(match[1].toLowerCase(), match[2])
+       return false
+     })
+ 
+     const blocks = convertBlocks(source, {definitions, tableName: 'table', takeTitle: !title})
+     return {title: title || blocks.title || fallbackTitle, lines: tidyLines(blocks.out, blocks.kinds)}
    }
  
    // ---- ページへの書き込み ----
