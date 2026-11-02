@@ -972,7 +972,7 @@ code:style.css
  ライト／ダークモードの切り替えボタン・絵文字の候補・目次（スマホではヘッダーのボタンから開く）・見出しリンクのコピーボタンの見た目
 code:style.css
  /* ヘッダーのライト／ダークモードの切り替えボタン（自分のアイコンの左隣） */
- .navbar .zs-theme-toggle-item {
+ .navbar .navbar-menu > li.zs-theme-toggle-item {
    display: flex;
    align-items: center;
  }
@@ -1174,22 +1174,29 @@ code:style.css
    background-color: var(--zs-accent);
  }
  
- /* スマホ幅では、ヘッダー左端のボタンから目次を開く */
- .zs-toc-toggle,
+ /*
+  * スマホ幅では、ヘッダーの自分のアイコンの右隣にあるボタンから目次を開く。
+  * Cosense の .navbar .navbar-menu > li { display: block } より優先されるように、同じ形のセレクターにする
+  */
+ .navbar .navbar-menu > li.zs-toc-toggle-item,
  .zs-toc-scrim,
  .zs-toc-empty {
    display: none;
  }
  
  @media (max-width: 767px) {
-   .navbar .zs-toc-toggle:not([hidden]) {
+   .navbar .navbar-menu > li.zs-toc-toggle-item:not([hidden]) {
+     display: flex;
+     align-items: center;
+   }
+ 
+   .navbar .zs-toc-toggle {
      display: flex;
      flex: none;
      align-items: center;
      justify-content: center;
      width: 32px;
      height: 32px;
-     margin-right: 2px;
      padding: 0;
      color: var(--zs-navbar-icon);
      background: none;
@@ -1693,7 +1700,7 @@ code:script.js
 
 [#* 追従する目次]
  画面幅が 1300px 以上のとき、見出しが 2 つ以上あるページでは本文の右に目次を表示し、スクロールに合わせて現在の見出しを強調する
- スマホ幅（767px 以下）では、ヘッダー左端のボタンから同じ目次を開く
+ スマホ幅（767px 以下）では、ヘッダーの自分のアイコンの右隣にあるボタンから同じ目次を開く
 code:script.js
  // ブロック内の変数は、ほかの機能の変数と衝突しない
  {
@@ -1732,9 +1739,12 @@ code:script.js
    const toggle = document.createElement('button')
    toggle.type = 'button'
    toggle.className = 'zs-toc-toggle'
-   toggle.hidden = true
    toggle.setAttribute('aria-controls', toc.id)
    toggle.innerHTML = '<svg viewBox="0 -960 960 960" aria-hidden="true"><path/></svg>'
+   const toggleItem = document.createElement('li')
+   toggleItem.className = 'zs-toc-toggle-item'
+   toggleItem.hidden = true
+   toggleItem.append(toggle)
    const scrim = document.createElement('div')
    scrim.className = 'zs-toc-scrim'
  
@@ -1804,10 +1814,15 @@ code:script.js
      if (current) revealItem(current)
    }
  
-   // ヘッダーの左端にボタンを置く（ヘッダーが描き直されたときは置き直す）
+   // ヘッダーの自分のアイコンの右隣にボタンを置く（ヘッダーが描き直されたときは置き直す）
    const mount = () => {
-     const left = document.querySelector('.navbar .row > .left')
-     if (left && left.firstElementChild !== toggle) left.prepend(toggle)
+     const menu = document.querySelector('.navbar .navbar-menu')
+     const userMenu = menu?.querySelector(':scope > .user-menu-dropdown')
+     if (userMenu) {
+       if (userMenu.nextElementSibling !== toggleItem) userMenu.after(toggleItem)
+     } else if (menu && toggleItem.parentElement !== menu) {
+       menu.append(toggleItem)
+     }
      if (!scrim.isConnected) document.body.append(scrim)
    }
  
@@ -1816,7 +1831,7 @@ code:script.js
      const column = document.querySelector('.page-column')
      const isPage = Boolean(column) && scrapbox.Layout === 'page'
      headings = isPage ? getHeadings() : []
-     toggle.hidden = !isPage
+     toggleItem.hidden = !isPage
      toc.classList.toggle('is-active', headings.length >= MIN_HEADINGS)
      if (!isPage) {
        setOpen(false)
