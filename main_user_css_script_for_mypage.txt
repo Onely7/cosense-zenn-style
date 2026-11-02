@@ -827,7 +827,7 @@ code:style.css
  }
 
 [*# UserScript で追加する部品]
- 絵文字の候補・追従する目次の見た目
+ 絵文字の候補・追従する目次・見出しリンクのコピーボタンの見た目
 code:style.css
  /* 絵文字の候補 */
  .zs-emoji-menu {
@@ -1000,9 +1000,89 @@ code:style.css
    background-color: var(--zs-accent);
  }
  
+ /* 見出しリンクのコピーボタン */
+ .zs-heading-link {
+   position: absolute;
+   z-index: 310;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   box-sizing: border-box;
+   width: 26px;
+   height: 26px;
+   padding: 0;
+   color: var(--zs-text-muted);
+   background-color: var(--zs-surface);
+   border: 1px solid var(--zs-border);
+   border-radius: 6px;
+   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+   cursor: pointer;
+ }
+ 
+ .zs-heading-link[hidden] {
+   display: none;
+ }
+ 
+ .zs-heading-link:hover,
+ .zs-heading-link:focus-visible {
+   color: var(--zs-accent-strong);
+   border-color: var(--zs-accent);
+ }
+ 
+ .zs-heading-link svg {
+   width: 15px;
+   height: 15px;
+   fill: none;
+   stroke: currentColor;
+   stroke-width: 2.2;
+   stroke-linecap: round;
+   stroke-linejoin: round;
+ }
+ 
+ .zs-heading-link-check,
+ .zs-heading-link.is-copied .zs-heading-link-icon {
+   display: none;
+ }
+ 
+ .zs-heading-link.is-copied .zs-heading-link-check {
+   display: block;
+ }
+ 
+ .zs-heading-link.is-copied {
+   color: #fff;
+   background-color: var(--zs-accent-strong);
+   border-color: var(--zs-accent-strong);
+ }
+ 
+ /* 「コピーしました」の吹き出し */
+ .zs-heading-link:is(.is-copied, .is-failed)::after {
+   content: attr(data-message);
+   position: absolute;
+   bottom: calc(100% + 6px);
+   left: 50%;
+   transform: translateX(-50%);
+   padding: 2px 8px;
+   color: #fff;
+   background-color: rgba(26, 38, 56, 0.92);
+   border-radius: 4px;
+   font-size: 12px;
+   line-height: 1.6;
+   white-space: nowrap;
+   pointer-events: none;
+ }
+ 
+ @media (max-width: 767px) {
+   .zs-heading-link:is(.is-copied, .is-failed)::after {
+     right: 0;
+     left: auto;
+     transform: none;
+   }
+ }
+ 
  @media print {
    .zs-emoji-menu,
-   .zs-toc {
+   .zs-toc,
+   .zs-heading-link {
      display: none !important;
    }
  }
@@ -1023,7 +1103,7 @@ code:script.js
  /*
   * ページ内の見出しを集める。
   * level は * の数、depth は最上位の見出しを 0 とした階層の深さ。
-  * 追従する目次でも使う。
+  * 追従する目次や見出しリンクのコピーでも使う。
   */
  function getHeadings () {
    const candidates = []
@@ -1231,6 +1311,131 @@ code:script.js
    scrapbox.on('page:changed', () => scheduleRender(0))
    scrapbox.on('layout:changed', () => scheduleRender(0))
    scheduleRender(0)
+ }
+
+[#* 見出しリンクのコピー]
+ 見出しにマウスを重ねる（スマホでは見出しをタップする）と、その見出しへのリンク（ページの URL#行 ID）をコピーするボタンを表示する
+code:script.js
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   const SIZE = 26
+   const button = document.createElement('button')
+   button.type = 'button'
+   button.className = 'zs-heading-link'
+   button.title = '見出しへのリンクをコピー'
+   button.setAttribute('aria-label', '見出しへのリンクをコピー')
+   button.hidden = true
+   button.innerHTML = [
+     '<svg class="zs-heading-link-icon" viewBox="0 0 24 24" aria-hidden="true">',
+     '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/>',
+     '<path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/>',
+     '</svg>',
+     '<svg class="zs-heading-link-check" viewBox="0 0 24 24" aria-hidden="true">',
+     '<path d="M20 6 9 17l-5-5"/>',
+     '</svg>'
+   ].join('')
+   document.body.append(button)
+ 
+   let headingIds = new Set()
+   let current = null
+   let hideTimer = 0
+   let resetTimer = 0
+ 
+   const headingLineOf = target => {
+     const line = target instanceof Element ? target.closest('.lines .line') : null
+     return line && headingIds.has(line.id.slice(1)) ? line : null
+   }
+ 
+   const hide = () => {
+     clearTimeout(hideTimer)
+     button.hidden = true
+     current = null
+   }
+ 
+   const show = line => {
+     clearTimeout(hideTimer)
+     if (document.querySelector('.app.presentation')) return
+     if (line === current && !button.hidden) return
+     current = line
+     button.classList.remove('is-copied', 'is-failed')
+     const box = (line.querySelector('.deco-\\#, strong') ?? line).getBoundingClientRect()
+     const narrow = window.matchMedia('(max-width: 767px)').matches
+     const left = narrow ? line.getBoundingClientRect().right - SIZE : box.left - SIZE - 6
+     const top = box.top + Math.max(0, (box.height - SIZE) / 2)
+     button.style.left = `${Math.round(left + window.scrollX)}px`
+     button.style.top = `${Math.round(top + window.scrollY)}px`
+     button.hidden = false
+   }
+ 
+   let refreshTimer = 0
+   const refresh = () => {
+     clearTimeout(refreshTimer)
+     refreshTimer = setTimeout(() => {
+       headingIds = new Set(scrapbox.Layout === 'page' ? getHeadings().map(heading => heading.id) : [])
+       if (current && !headingLineOf(current)) hide()
+     }, 200)
+   }
+ 
+   const copyText = async text => {
+     try {
+       await navigator.clipboard.writeText(text)
+       return true
+     } catch {
+       const textarea = document.createElement('textarea')
+       textarea.value = text
+       textarea.setAttribute('readonly', '')
+       textarea.style.cssText = 'position: fixed; top: 0; left: 0; opacity: 0;'
+       document.body.append(textarea)
+       textarea.select()
+       const copied = document.execCommand('copy')
+       textarea.remove()
+       return copied
+     }
+   }
+ 
+   document.addEventListener('pointerover', event => {
+     if (event.pointerType !== 'mouse') return
+     if (button.contains(event.target)) {
+       clearTimeout(hideTimer)
+       return
+     }
+     const line = headingLineOf(event.target)
+     if (line) {
+       show(line)
+     } else if (!button.hidden) {
+       clearTimeout(hideTimer)
+       hideTimer = setTimeout(hide, 400)
+     }
+   })
+ 
+   // タッチ操作では、タップして編集中になった見出しにボタンを表示する
+   document.addEventListener('pointerup', event => {
+     if (event.pointerType === 'mouse' || button.contains(event.target)) return
+     setTimeout(() => {
+       const line = headingLineOf(document.querySelector('.lines .line.cursor-line'))
+       if (line) show(line)
+       else hide()
+     }, 100)
+   })
+ 
+   button.addEventListener('click', async () => {
+     if (!current) return
+     const copied = await copyText(`${location.origin}${location.pathname}#${current.id.slice(1)}`)
+     button.dataset.message = copied ? 'コピーしました' : 'コピーできませんでした'
+     button.classList.toggle('is-copied', copied)
+     button.classList.toggle('is-failed', !copied)
+     clearTimeout(resetTimer)
+     resetTimer = setTimeout(() => button.classList.remove('is-copied', 'is-failed'), 1500)
+   })
+ 
+   window.addEventListener('resize', hide)
+   scrapbox.on('lines:changed', refresh)
+   scrapbox.on('layout:changed', refresh)
+   scrapbox.on('page:changed', () => {
+     hide()
+     refresh()
+   })
+   refresh()
  }
 
 [#* Emoji (絵文字)]
