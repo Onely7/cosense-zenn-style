@@ -207,13 +207,19 @@ The conversion from Markdown mainly works as follows:
 | Other `#`, `##`, `###`, and `####` or deeper headings | `[****# heading]`, `[***# heading]`, `[**# heading]`, `[*# heading]` |
 | `**bold**` `*italic*` `~~strikethrough~~` | `[* bold]` `[/ italic]` `[- strikethrough]` |
 | Bulleted lists, numbered lists, and task lists | Indented lines, lines starting with `1. `, and lines starting with `[_]` / `[x]` |
-| ```` ```language:file ```` | `code:file` |
+| ```` ```language:file ```` and ```` ```language title="file" ```` | `code:file` |
 | A ```` ```console ```` (or similar) code block containing only lines starting with `$ ` or `% ` | Command lines |
-| Tables | `table:name` (a bold-only line right before the table becomes its name) |
-| `> quotes`, Zenn's `:::message` and `:::details` | Lines starting with `> ` |
+| Tables | `table:name` (a bold-only line right before the table becomes its name; otherwise `表` in Japanese documents and `table` in others) |
+| `> quotes`, Zenn's `:::message` and `:::details` | Lines starting with `> ` (code blocks and tables in a quote are moved out of it, and lists are indented inside it) |
+| GitHub alerts such as `> [!NOTE]` | A quote whose first line is the alert type in bold (such as `Note`) |
 | Links and images | `[text URL]` and `[image URL]` (links to pages in the project become `[page]`) |
+| Zenn embeds such as `@[card](URL)` | A line with only the URL (YouTube becomes an embedded video `[URL]`) |
+| Footnotes `[^1]` and Zenn inline footnotes `^[note]` | `^1` and `（note）` |
+| `<kbd>Ctrl</kbd>` | `` `Ctrl` `` |
 | `$formula$` and formulas enclosed in `$$` | `[$ formula]` |
 | `---` | `[/icons/hr.icon]` |
+
+Cosense cannot show inline code inside links, decorations such as bold text, or headings, so inline code there loses its backticks or is moved outside the decoration. A blank line is also added before each heading, even when the Markdown has none.
 
 ### Adjusting colors and width
 
