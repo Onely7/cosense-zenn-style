@@ -69,6 +69,10 @@ code:style.css
    --zs-cursor-line-bg: #3ea8ff14;
    --zs-caret: #0b63c4; /* 背景と同化しにくい濃い青 */
    --zs-caret-halo: rgba(255, 255, 255, 0.9); /* 色の付いた背景の上でも見えるように付ける縁取り */
+ 
+   /* ヘッダー */
+   --zs-navbar-height: 48px; /* Cosense 標準は 40px */
+   --zs-navbar-bg: rgba(255, 255, 255, 0.72); /* すりガラス風の半透明の背景 */
  }
  
  /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
@@ -81,7 +85,7 @@ code:style.css
 
 [*# ダーク系テーマ]
  プロジェクトのテーマが default-dark, paper-dark-dark, hacker1, hacker2 のときは、暗い背景向けの配色に切り替える
- ナビゲーションバーや背景など Cosense 本体の部分は、テーマの配色をそのまま使う
+ 背景など Cosense 本体の部分は、テーマの配色をそのまま使う
 code:style.css
  :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) {
    --zs-text: rgba(255, 255, 255, 0.87);
@@ -119,6 +123,8 @@ code:style.css
    --zs-cursor-line-bg: rgba(62, 168, 255, 0.12);
    --zs-caret: #9ad0ff;
    --zs-caret-halo: rgba(0, 0, 0, 0.7);
+ 
+   --zs-navbar-bg: rgba(32, 35, 42, 0.72);
  }
  
  /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
@@ -671,6 +677,7 @@ code:style.css
  }
 
 [*# ヘッダーメニュー]
+ ヘッダーは画面上部に固定したまま、背後の本文がうっすら透けるすりガラス風にする（文字やアイコンはぼかさない）
 code:style.css
  :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .navbar {
    /* project name */
@@ -686,7 +693,67 @@ code:style.css
    --search-form-icon-focus-color: var(--zs-icon-muted);
  
    border-bottom: solid var(--zs-border) 0.5px;
-   background-color: rgba(255, 255, 255, 0.94);
+ }
+ 
+ /*
+  * すりガラス風の背景。
+  * .navbar 自体に backdrop-filter を付けると中のメニューの配置の基準が変わるため、
+  * 背面に置いた擬似要素に半透明の色とぼかしを付ける。
+  */
+ .navbar.navbar-default {
+   background-color: transparent;
+ }
+ .navbar.navbar-default::before {
+   content: "";
+   position: absolute;
+   inset: 0;
+   z-index: -1;
+   background-color: var(--zs-navbar-bg);
+   -webkit-backdrop-filter: saturate(180%) blur(16px);
+   backdrop-filter: saturate(180%) blur(16px);
+   pointer-events: none;
+ }
+ 
+ /* ヘッダーを少し高くし、その分だけ本文とページメニューの位置を下げる */
+ .navbar .row,
+ .navbar .navbar-brand,
+ .navbar .expandable-menu,
+ .navbar .expandable-menu .page-menu {
+   height: var(--zs-navbar-height);
+ }
+ @media screen {
+   .app {
+     padding-top: calc(var(--zs-navbar-height) + 16px);
+   }
+ }
+ .page-column > .page-menu {
+   top: calc(var(--zs-navbar-height) + 5px);
+ }
+ 
+ /* project icon・新規ページボタン・自分のアイコンを少し小さくする */
+ .navbar .brand-icon svg {
+   height: 24px;
+ }
+ .navbar .new-button {
+   width: 28px;
+   height: 28px;
+ }
+ .navbar .new-button .horizontal-line {
+   top: calc(50% - 1.25px);
+   left: calc(50% - 7px);
+   width: 14px;
+   height: 2.5px;
+ }
+ .navbar .new-button .vertical-line {
+   top: calc(50% - 7px);
+   left: calc(50% - 1.25px);
+   width: 2.5px;
+   height: 14px;
+ }
+ .navbar .navbar-menu > li.user-menu-dropdown > .dropdown-toggle,
+ .navbar .navbar-menu > li.user-menu-dropdown > .dropdown-toggle > img.icon {
+   width: 28px;
+   height: 28px;
  }
  
  /*
@@ -826,9 +893,9 @@ code:style.css
      display: block;
      grid-area: toc;
      position: sticky;
-     top: 56px;
+     top: calc(var(--zs-navbar-height) + 16px);
      box-sizing: border-box;
-     max-height: calc(100vh - 72px);
+     max-height: calc(100vh - var(--zs-navbar-height) - 32px);
      overflow-y: auto;
      overscroll-behavior: contain;
      padding: 16px 12px 16px 14px;
