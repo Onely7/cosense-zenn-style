@@ -917,6 +917,14 @@ code:style.css
    height: 28px;
  }
  
+ /* 幅の狭いスマホでは、ヘッダーの部品の間隔を詰めて、プロジェクト名を表示できる幅を確保する */
+ @media (max-width: 400px) {
+   .navbar .row,
+   .navbar .navbar-menu {
+     gap: 8px;
+   }
+ }
+ 
  /*
   * project icon の SVG には色を指定しない。
   * アイコンが本来持っている色と濃淡をそのまま表示する。
