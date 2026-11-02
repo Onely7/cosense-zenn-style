@@ -67,6 +67,13 @@ code:style.css
    /* 編集中の行・テキストカーソル */
    --zs-cursor-line-bg: #3ea8ff14;
    --zs-caret: #3ea8ff;
+ 
+   /* メッセージボックス */
+   --zs-message-text: #2e445c;
+   --zs-message-bg: #fff6e4;
+   --zs-message-icon: #ffb84c;
+   --zs-alert-bg: #feebee;
+   --zs-alert-icon: #ff6b6b;
  }
  
  /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
@@ -115,6 +122,10 @@ code:style.css
    --zs-table-editing-bg: rgba(62, 168, 255, 0.14);
  
    --zs-cursor-line-bg: rgba(62, 168, 255, 0.12);
+ 
+   --zs-message-text: var(--zs-text);
+   --zs-message-bg: rgba(255, 184, 76, 0.16);
+   --zs-alert-bg: rgba(255, 107, 107, 0.16);
  }
  
  /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
@@ -353,6 +364,78 @@ code:style.css
  /* 編集中の引用行を薄く強調する */
  .line.cursor-line.quote-line .quote {
    background-color: var(--zs-quote-editing-bg);
+ }
+
+[*# メッセージボックス]
+ Zenn の `:::message` / `:::message alert` 風の囲み
+	`[~ メッセージ]` → [~ メッセージ]
+	`[~! 警告メッセージ]` → [~! 警告メッセージ]
+ 同じ種類の行が続くときは、1 つの囲みにまとめて表示する
+code:style.css
+ /*
+  * Cosense は記法の括弧を幅 0 の要素として前後に残すため、
+  * 見出しと同じく inline-block と width: 100% で 1 行分の囲みにする。
+  */
+ .line .deco-\~ {
+   display: inline-block;
+   position: relative;
+   width: 100%;
+   vertical-align: top;
+   box-sizing: border-box;
+   margin: 0.5em 0;
+   padding: 0.85em 1em 0.85em 2.8em;
+   color: var(--zs-message-text);
+   background-color: var(--zs-message-bg);
+   border-radius: 6px;
+   font-size: 0.94em;
+   line-height: 1.75;
+ }
+ 
+ /* 左上の「!」アイコン */
+ .line .deco-\~::before {
+   content: "!";
+   position: absolute;
+   top: 1.36em;
+   left: 1.2em;
+   width: 1.6em;
+   height: 1.6em;
+   color: #fff;
+   background-color: var(--zs-message-icon);
+   border-radius: 50%;
+   font-size: 0.8em;
+   font-weight: 700;
+   line-height: 1.6em;
+   text-align: center;
+ }
+ 
+ /* [~! 警告] は赤系にする（[! ] のマーカー用の色と余白は打ち消す） */
+ .line .deco-\~.deco-\! {
+   color: var(--zs-message-text);
+   background-color: var(--zs-alert-bg);
+   padding: 0.85em 1em 0.85em 2.8em;
+ }
+ .line .deco-\~.deco-\!::before {
+   background-color: var(--zs-alert-icon);
+ }
+ 
+ /* 同じ種類のメッセージが続く行は、1 つの囲みにまとめる */
+ .line:has(.deco-\~:not(.deco-\!)) + .line .deco-\~:not(.deco-\!),
+ .line:has(.deco-\~.deco-\!) + .line .deco-\~.deco-\! {
+   margin-top: 0;
+   padding-top: 0;
+   border-top-left-radius: 0;
+   border-top-right-radius: 0;
+ }
+ .line:has(.deco-\~:not(.deco-\!)) + .line .deco-\~:not(.deco-\!)::before,
+ .line:has(.deco-\~.deco-\!) + .line .deco-\~.deco-\!::before {
+   content: none;
+ }
+ .line:has(.deco-\~:not(.deco-\!)):has(+ .line .deco-\~:not(.deco-\!)) .deco-\~:not(.deco-\!),
+ .line:has(.deco-\~.deco-\!):has(+ .line .deco-\~.deco-\!) .deco-\~.deco-\! {
+   margin-bottom: 0;
+   padding-bottom: 0;
+   border-bottom-left-radius: 0;
+   border-bottom-right-radius: 0;
  }
 
 [*# GitHub ファイル埋め込み]
