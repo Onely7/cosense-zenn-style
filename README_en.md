@@ -67,7 +67,7 @@ The optional embed features additionally require:
 - [Tampermonkey](https://www.tampermonkey.net/)
 - Chrome or another Chromium-based browser
 
-These settings normally apply **only to the person who configured them**. This guide does not cover ProjectCSS or ProjectScript, which apply customizations across an entire project.
+These customizations normally apply **only to the screen of the person who set them up**. This guide does not cover ProjectCSS or ProjectScript, which apply customizations across an entire project.
 
 ## Setup
 
@@ -219,7 +219,9 @@ The conversion from Markdown mainly works as follows:
 | `$formula$` and formulas enclosed in `$$` | `[$ formula]` |
 | `---` | `[/icons/hr.icon]` |
 
-Cosense cannot show inline code inside links, decorations such as bold text, or headings, so inline code there loses its backticks or is moved outside the decoration. A blank line is also added before each heading, even when the Markdown has none.
+Cosense cannot show inline code inside links, decorations such as bold text, or headings. For this reason, inline code in link text and headings loses its backticks, and inline code inside decorations is moved outside the decoration.
+
+A blank line is added before each heading, even when the Markdown has none.
 
 ### Adjusting colors and width
 
@@ -371,7 +373,7 @@ https://x.com/OpenAI/status/2075686461693898868
 
 With the Tampermonkey script, the parent post of a reply is also displayed when the data is available.
 
-To hide the parent post, add `conversation=none`:
+To hide the parent post, add `conversation=none` to the URL as a query parameter:
 
 ```text
 https://x.com/example/status/1234567890?conversation=none
@@ -389,7 +391,7 @@ When you move the cursor to the URL line, the card disappears so that you can ed
 - UserScript cards rely on an internal Cosense API, so changes made by Cosense may break them.
 - Private, deleted, age-restricted, or otherwise unavailable posts cannot be displayed.
 - Videos are not played directly inside the page. Clicking a thumbnail opens the post on X.
-- Post data is retrieved through an X Syndication endpoint. Because this endpoint is not guaranteed to be a stable public API, changes made by X may break the feature.
+- Tampermonkey cards fetch post data from an X Syndication endpoint. Because this endpoint is not guaranteed to be a stable public API, changes made by X may break the feature.
 - Reply, repost, and like counts reflect the data available when the post was fetched.
 
 ## Security notes
