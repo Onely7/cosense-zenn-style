@@ -2328,6 +2328,9 @@ code:script.js
    const GYAZO_URL = /^https:\/\/(?:i\.)?gyazo\.com\/[0-9a-f]{32}(?:\/raw|\.\w+)?$/i
    const ICON = /^(.+)\.icon(?:\*(\d+))?$/
    const TASK = /^\[([_x])\](?:\s+|$)/
+   const CLI = /^[$%] \S/
+   const OPEN = '\uE000' // 強調の開始位置の目印（書き出しの最後に取り除く）
+   const CLOSE = '\uE001' // 強調の終了位置の目印
    const MAP = /^([NS])(\d+(?:\.\d+)?),([EW])(\d+(?:\.\d+)?)(?:,Z(\d+))?(?:\s+(.+))?$/
  
    const indentOf = text => /^[ \t]*/.exec(text)[0].length
@@ -2349,9 +2352,11 @@ code:script.js
        const char = text[index]
        let match
        if (char === '`') {
-         const end = text.indexOf('`', index + 1)
-         if (end > index) {
-           push({type: 'code', text: text.slice(index + 1, end)})
+         // コードの中の \` は、閉じ記号ではなくバッククオートそのもの（Cosense と同じ）
+         let end = index + 1
+         while (end < text.length && text[end] !== '`') end += text[end] === '\\' && text[end + 1] === '`' ? 2 : 1
+         if (end < text.length) {
+           push({type: 'code', text: text.slice(index + 1, end).replace(/\\`/g, '`')})
            index = end + 1
            continue
          }
@@ -2435,7 +2440,7 @@ code:script.js
  
    // ---- Markdown へ書き出す ----
  
-   const createWriter = ({project, origin}) => {
+   const createWriter = ({project, origin, icons = new Map()}) => {
      // Markdown のリンク先で問題になる空白・括弧だけをエスケープする
      const destination = url => url.replace(/[\s()<>]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`)
      const pageUrl = (projectName, page) =>
@@ -2446,10 +2451,9 @@ code:script.js
          ? pageUrl(projectName, page.join('/'))
          : destination(`${origin}/${encodeURIComponent(projectName)}`)
      }
-     const iconUrl = page => {
+     const iconPage = page => {
        const match = /^\/([^/]+)\/(.+)$/.exec(page)
-       const [projectName, title] = match ? [match[1], match[2]] : [project, page]
-       return destination(`${origin}/api/pages/${encodeURIComponent(projectName)}/${encodeURIComponent(title)}/icon`)
+       return match ? {projectName: match[1], title: match[2]} : {projectName: project, title: page}
      }
  
      // 書式として解釈される記号をエスケープする
@@ -2476,8 +2480,92 @@ code:script.js
        return `${fence}${padding}${text}${padding}${fence}`
      }
  
-     const renderNodes = (nodes, context = {}) =>
-       nodes.map((node, index) => renderNode(node, {...context, atStart: Boolean(context.atStart) && index === 0})).join('')
+     const renderNodes = (nodes, context = {}) => nodes.reduce((result, node, index) => {
+       const piece = renderNode(node, {...context, atStart: Boolean(context.atStart) && index === 0})
+       // 「!」の直後にリンクが続くと画像の記法になってしまうため、「!」をエスケープする
+       return (piece.startsWith('[') && /(?<!\\)!$/.test(result) ? `${result.slice(0, -1)}\\!` : result) + piece
+     }, '')
+ 
+     // 装飾の種類（Markdown で同じ記号になるもの）
+     const emphasisKind = node => {
+       if (node.type === 'strong') return '**'
+       if (node.type !== 'deco') return null
+       const bold = node.chars.includes('*') || node.chars.includes('!')
+       const kind = (bold ? '**' : '') + (node.chars.includes('/') ? '*' : '') + (node.chars.includes('-') ? '~~' : '')
+       return kind || null
+     }
+ 
+     // [* a][* b] のように同じ装飾が続くと **a****b** となり強調にならないため、1 つにまとめる
+     const mergeEmphasis = nodes => nodes.reduce((result, node) => {
+       const previous = result[result.length - 1]
+       const kind = emphasisKind(node)
+       if (kind && previous && emphasisKind(previous) === kind) {
+         result[result.length - 1] = {...previous, children: [...previous.children, ...node.children]}
+       } else {
+         result.push(node)
+       }
+       return result
+     }, [])
+ 
+     // 1 行分を書き出す。CommonMark では、強調の記号の内側が記号（「 や [ など）で外側が文字のとき、
+     // 強調にならない（日本語の文中で起きやすい）ため、そうなる位置だけ記号の外側に空白を入れる
+     const isPunctuation = char => /[\p{P}\p{S}]/u.test(char)
+     const isWordChar = char => char !== undefined && !/\s/u.test(char) && !isPunctuation(char)
+     const isSentinel = char => char === OPEN || char === CLOSE
+     const renderInline = (nodes, context = {}) => {
+       const chars = Array.from(renderNodes(mergeEmphasis(nodes), context))
+       const output = []
+       const lastChar = () => {
+         for (let index = output.length - 1; index >= 0; index -= 1) if (output[index]) return output[index]
+         return undefined
+       }
+       chars.forEach((char, index) => {
+         if (char === OPEN) {
+           // 最初の記号の並び（~~ や ** など）の直後の文字を調べる
+           let next = index + 1
+           while (isSentinel(chars[next])) next += 1
+           const mark = chars[next]
+           while (chars[next] === mark || isSentinel(chars[next])) next += 1
+           output.push(isPunctuation(chars[next] ?? ' ') && isWordChar(lastChar()) ? ' ' : '')
+         } else if (char === CLOSE) {
+           // 最後の記号の並びの直前の文字を調べる
+           let previous = output.length - 1
+           while (previous >= 0 && !output[previous]) previous -= 1
+           const mark = output[previous]
+           while (previous >= 0 && (output[previous] === mark || !output[previous])) previous -= 1
+           let next = index + 1
+           while (isSentinel(chars[next])) next += 1
+           output.push(isPunctuation(output[previous] ?? ' ') && isWordChar(chars[next]) ? ' ' : '')
+         } else {
+           output.push(char)
+         }
+       })
+       return output.join('')
+     }
+ 
+     // 中身の先頭と末尾の空白・記号（「」など）は ** の外に出す
+     const renderEmphasis = (children, open, close, context) => {
+       // 画像やアイコンだけを囲む装飾は、Markdown では意味がないため付けない
+       if (children.every(node => ['image', 'icon'].includes(node.type) || (node.type === 'text' && !node.text.trim()))) {
+         return renderNodes(children, context)
+       }
+       const nodes = children.map(node => ({...node}))
+       const first = nodes[0]
+       const last = nodes[nodes.length - 1]
+       let before = ''
+       let after = ''
+       if (first?.type === 'text') {
+         before = /^[\s\p{P}\p{S}]*/u.exec(first.text)[0]
+         first.text = first.text.slice(before.length)
+       }
+       if (last?.type === 'text') {
+         after = /[\s\p{P}\p{S}]*$/u.exec(last.text)[0]
+         last.text = last.text.slice(0, last.text.length - after.length)
+       }
+       const body = renderInline(nodes.filter(node => node.type !== 'text' || node.text !== ''))
+       if (!body) return renderNodes(children, context)
+       return `${escapeText(before, context.atStart)}${OPEN}${open}${body}${close}${CLOSE}${escapeText(after)}`
+     }
  
      const renderNode = (node, context) => {
        switch (node.type) {
@@ -2488,15 +2576,18 @@ code:script.js
          case 'formula':
            return `$${node.text}$`
          case 'strong':
-           return wrap(renderNodes(node.children), '**')
+           return renderEmphasis(node.children, '**', '**', context)
          case 'deco': {
-           let inner = renderNodes(node.children)
-           if (node.chars.includes('/')) inner = wrap(inner, '*')
-           if (node.chars.includes('*') || node.chars.includes('!')) inner = wrap(inner, '**')
-           if (node.chars.includes('-')) inner = wrap(inner, '~~')
-           return inner
+           const bold = node.chars.includes('*') || node.chars.includes('!')
+           const italic = node.chars.includes('/')
+           const strike = node.chars.includes('-') ? '~~' : ''
+           const emphasis = (bold ? '**' : '') + (italic ? '*' : '')
+           if (!emphasis && !strike) return renderNodes(node.children, context)
+           return renderEmphasis(node.children, strike + emphasis, emphasis + strike, context)
          }
          case 'link':
+           // [_] と [x] は、この UserCSS でチェックボックスとして表示する記法
+           if (node.page === '_' || node.page === 'x') return node.page === 'x' ? '☑' : '☐'
            return `[${escapeText(node.page)}](${pageUrl(project, node.page)})`
          case 'projectLink':
            return `[${escapeText(node.path)}](${projectUrl(node.path)})`
@@ -2509,13 +2600,20 @@ code:script.js
          case 'urlLink':
            return `[${escapeText(node.text)}](${destination(node.url)})`
          case 'image': {
+           // Cosense にアップロードした画像は、ほかのサイトからは表示できないため、リンクにする
+           if (/^https:\/\/scrapbox\.io\/files\//.test(node.src)) {
+             return `[${escapeText(node.src.split('/').pop())}](${destination(node.href ?? node.src)})`
+           }
            const src = /^https:\/\/gyazo\.com\/[0-9a-f]{32}$/i.test(node.src) ? `${node.src}/raw` : node.src
            const image = `![](${destination(src)})`
            return node.href ? `[${image}](${destination(node.href)})` : image
          }
          case 'icon': {
-           const name = node.page.split('/').pop()
-           return `![${escapeText(name)}](${iconUrl(node.page)})`.repeat(node.times)
+           // 画像を表示できるアイコンは小さな画像に、できないアイコンはページへのリンクにする
+           const {projectName, title} = iconPage(node.page)
+           const image = icons.get(`${projectName}/${title}`)
+           if (image) return `![${escapeText(title)}](${destination(image)})`.repeat(node.times)
+           return `[${escapeText(title)}](${pageUrl(projectName, title)})`
          }
          case 'map':
            return `[${escapeText(node.name)}](https://www.google.com/maps/@${node.lat},${node.lng},${node.zoom}z)`
@@ -2523,13 +2621,7 @@ code:script.js
        return ''
      }
  
-     // 前後の空白を記号の外に出して、**text** の形を崩さない
-     const wrap = (text, mark) => {
-       const [, before, body, after] = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)
-       return body ? `${before}${mark}${body}${mark}${after}` : text
-     }
- 
-     return {escapeText, codeSpan, renderNodes, wrap}
+     return {escapeText, codeSpan, renderInline, iconPage}
    }
  
    // 太字だけの行を見出しとして扱う（ページ内目次と同じ規則）
@@ -2563,7 +2655,7 @@ code:script.js
    // Cosense のページ（1 行目がタイトル）を Markdown に変換する
    const cosenseToMarkdown = (texts, options) => {
      const writer = createWriter(options)
-     const {escapeText, codeSpan, renderNodes, wrap} = writer
+     const {escapeText, codeSpan, renderInline, iconPage} = writer
      const [title = '', ...body] = texts
  
      // コードブロックと表は、まとまりとして読み取る
@@ -2588,18 +2680,22 @@ code:script.js
      }
      const headings = findHeadings(blocks)
  
+     const fenced = (info, rows) => {
+       const longest = Math.max(0, ...rows.flatMap(row => (row.match(/`+/g) ?? []).map(run => run.length)))
+       const fence = '`'.repeat(Math.max(3, longest + 1))
+       return [fence + info, ...rows, fence]
+     }
+ 
      const renderCode = block => {
        const {lang, filename} = parseCodeName(block.name)
-       const longest = Math.max(0, ...block.rows.flatMap(row => (row.match(/`+/g) ?? []).map(run => run.length)))
-       const fence = '`'.repeat(Math.max(3, longest + 1))
-       return [fence + (filename ? `${lang}:${filename}` : lang), ...block.rows, fence]
+       return fenced(filename ? `${lang}:${filename}` : lang, block.rows)
      }
  
      const renderTable = block => {
        const lines = block.title ? [`**${escapeText(block.title)}**`] : []
        const rows = block.rows
          .filter(row => row.trim() !== '')
-         .map(row => row.split('\t').map(cell => renderNodes(parseInline(cell.trim())).replace(/\|/g, '\\|')))
+         .map(row => row.split('\t').map(cell => renderInline(parseInline(cell.trim())).replace(/\|/g, '\\|')))
        const width = Math.max(0, ...rows.map(row => row.length))
        if (width === 0) return lines
        const cells = row => [...row, ...Array(width - row.length).fill('')].join(' | ')
@@ -2612,48 +2708,72 @@ code:script.js
      const renderLine = (block, index, inList) => {
        const heading = headings.get(index)
        if (heading) {
-         const text = renderNodes(heading.node.children).trim()
+         const text = renderInline(heading.node.children).trim()
          if (text) return {kind: 'heading', lines: [`${'#'.repeat(heading.level)} ${text}`]}
        }
        const {content} = block
        if (content.startsWith('>')) {
-         const quote = renderNodes(parseInline(content.slice(1).replace(/^ /, '')), {atStart: true})
+         const quote = renderInline(parseInline(content.slice(1).replace(/^ /, '')), {atStart: true})
          return {kind: 'quote', lines: [quote ? `> ${quote}` : '>']}
        }
-       if (/^[$%] \S/.test(content)) return {kind: 'para', lines: [codeSpan(content)]}
+       if (CLI.test(content)) return {kind: 'para', lines: [codeSpan(content)]}
        const nodes = parseInline(content)
-       if (nodes.length === 1 && nodes[0].type === 'formula' && !inList) {
-         return {kind: 'math', lines: ['$$', nodes[0].text, '$$']}
+       const [node] = nodes
+       if (nodes.length === 1 && !inList) {
+         if (node.type === 'formula') return {kind: 'math', lines: ['$$', node.text, '$$']}
+         // [/icons/hr.icon] だけの行は区切り線にする
+         if (node.type === 'icon' && iconPage(node.page).projectName === 'icons' && iconPage(node.page).title === 'hr') {
+           return {kind: 'rule', lines: ['---']}
+         }
+         // URL・画像・アイコンだけの行は、それだけの段落にする（Zenn などで URL がリンクカードになる）
+         if (['url', 'image', 'icon'].includes(node.type)) {
+           return {kind: 'media', lines: [renderInline(nodes, {atStart: true, wholeLine: true})]}
+         }
        }
-       return {kind: 'para', lines: [renderNodes(nodes, {atStart: true, wholeLine: nodes.length === 1})]}
+       return {kind: 'para', lines: [renderInline(nodes, {atStart: true})]}
      }
  
      const output = [`# ${escapeText(title)}`]
      let lastKind = 'heading'
      let listOffsets = [] // 各階層の箇条書きで、本文が始まる位置
      const emit = (kind, lines) => {
+       // 続けて書いた行は、Cosense と同じように改行して表示されるよう、行末に空白を 2 つ付ける
        if (!['para', 'list', 'quote'].includes(kind) || kind !== lastKind) output.push('')
+       else if (kind !== 'list') output[output.length - 1] += '  '
        output.push(...lines)
        lastKind = kind
        if (kind !== 'list') listOffsets = []
      }
  
-     blocks.forEach((block, index) => {
+     for (let index = 0; index < blocks.length; index += 1) {
+       const block = blocks[index]
        if (block.type === 'line' && block.content === '') {
          lastKind = 'blank'
-         return
+         continue
        }
-       // [_] と [x] で始まる行（この UserCSS でチェックボックスとして表示する記法）は、タスクリストにする
-       const task = block.type === 'line' && !headings.has(index) && TASK.exec(block.content)
-       const inList = block.indent > 0 || Boolean(task)
+       // 行頭が $ や % の行（コマンドライン）が続くときは、まとめてコードブロックにする
+       if (block.type === 'line' && block.indent === 0 && CLI.test(block.content) && !headings.has(index)) {
+         const commands = [block.content]
+         while (blocks[index + 1]?.type === 'line' && blocks[index + 1].indent === 0 && CLI.test(blocks[index + 1].content)) {
+           index += 1
+           commands.push(blocks[index].content)
+         }
+         emit('code', fenced('console', commands))
+         continue
+       }
+       // [_] と [x] で始まる行（この UserCSS でチェックボックスとして表示する記法）は、タスクリストにする。
+       // 見出しはインデントされていても箇条書きにしない
+       const isHeading = headings.has(index)
+       const task = block.type === 'line' && !isHeading && TASK.exec(block.content)
+       const inList = !isHeading && (block.indent > 0 || Boolean(task))
        let rendered
        if (block.type === 'code') rendered = {kind: 'code', lines: renderCode(block)}
        else if (block.type === 'table') rendered = {kind: 'table', lines: renderTable(block)}
        else rendered = renderLine(block, index, inList)
-       if (rendered.lines.length === 0) return
+       if (rendered.lines.length === 0) continue
        if (!inList) {
          emit(rendered.kind, rendered.lines)
-         return
+         continue
        }
  
        // インデントされた行は箇条書きにする。階層は 1 段ずつしか深くしない
@@ -2662,11 +2782,11 @@ code:script.js
        let lines = rendered.lines
        let marker = '-'
        if (task) {
-         const rest = renderNodes(parseInline(block.content.slice(task[0].length)))
+         const rest = renderInline(parseInline(block.content.slice(task[0].length)))
          lines = [`[${task[1] === 'x' ? 'x' : ' '}]${rest ? ` ${rest}` : ''}`]
        } else if (numbered) {
          marker = `${numbered[1]}.`
-         lines = [renderNodes(parseInline(numbered[2]), {atStart: true})]
+         lines = [renderInline(parseInline(numbered[2]), {atStart: true})]
        }
        const prefix = `${' '.repeat(depth === 0 ? 0 : listOffsets[depth - 1])}${marker} `
        const offsets = listOffsets.slice(0, depth)
@@ -2675,7 +2795,7 @@ code:script.js
          return line === '' ? '' : ' '.repeat(prefix.length) + line
        }))
        listOffsets = [...offsets, prefix.length]
-     })
+     }
  
      return `${output.join('\n').trim()}\n`
    }
@@ -2698,12 +2818,57 @@ code:script.js
      setTimeout(() => URL.revokeObjectURL(url), 10000)
    }
  
-   const download = format => {
+   // アイコンのページの画像を調べる。Gyazo の画像は小さいサイズで使い、
+   // Cosense にアップロードした画像はほかのサイトから表示できないため使わない
+   const toEmbeddableImage = url => {
+     const gyazo = /^https:\/\/(?:i\.)?gyazo\.com\/([0-9a-f]{32})/i.exec(url ?? '')
+     if (gyazo) return `https://gyazo.com/${gyazo[1]}/max_size/40`
+     return /^https?:\/\//.test(url ?? '') && !/^https:\/\/scrapbox\.io\//.test(url) ? url : null
+   }
+ 
+   // 画像を読み込めるか確かめる（Gyazo の GIF など、小さいサイズの画像を作れないものもある）
+   const canLoad = url => new Promise(resolve => {
+     const image = new Image()
+     const timer = setTimeout(() => resolve(false), 5000)
+     image.onload = () => {
+       clearTimeout(timer)
+       resolve(true)
+     }
+     image.onerror = () => {
+       clearTimeout(timer)
+       resolve(false)
+     }
+     image.src = url
+   })
+ 
+   const resolveIcons = async (lines, project) => {
+     const pages = new Map()
+     for (const line of lines) {
+       for (const match of line.matchAll(/\[\[?([^[\]]+?)\.icon(?:\*\d+)?\]\]?/g)) {
+         const path = /^\/([^/]+)\/(.+)$/.exec(match[1])
+         const [projectName, title] = path ? [path[1], path[2]] : [project, match[1]]
+         pages.set(`${projectName}/${title}`, [projectName, title])
+       }
+     }
+     const icons = new Map()
+     await Promise.all([...pages].slice(0, 100).map(async ([key, [projectName, title]]) => {
+       try {
+         const response = await fetch(`/api/pages/${encodeURIComponent(projectName)}/${encodeURIComponent(title)}`)
+         const image = response.ok ? toEmbeddableImage((await response.json()).image) : null
+         if (image && await canLoad(image)) icons.set(key, image)
+       } catch {}
+     }))
+     return icons
+   }
+ 
+   const download = async format => {
      const lines = (scrapbox.Page.lines ?? []).map(line => line.text)
      if (lines.length === 0) return
      const title = scrapbox.Page.title ?? lines[0]
      if (format === 'md') {
-       const markdown = cosenseToMarkdown(lines, {project: scrapbox.Project.name, origin: location.origin})
+       const project = scrapbox.Project.name
+       const icons = await resolveIcons(lines, project)
+       const markdown = cosenseToMarkdown(lines, {project, origin: location.origin, icons})
        save(markdown, toFileName(title, 'md'), 'text/markdown;charset=utf-8')
      } else {
        save(lines.join('\n'), toFileName(title, 'txt'), 'text/plain;charset=utf-8')
