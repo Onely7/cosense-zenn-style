@@ -75,6 +75,7 @@ code:style.css
    --zs-navbar-bg: rgba(255, 255, 255, 0.72); /* すりガラス風の半透明の背景 */
    --zs-navbar-icon: #1f1f1f; /* ライト／ダークモードの切り替えボタンなど */
    --zs-navbar-hover-bg: rgba(31, 31, 31, 0.08);
+   --zs-panel-bg: rgba(255, 255, 255, 0.88); /* スマホで開く目次の背景 */
  }
  
  /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
@@ -129,6 +130,7 @@ code:style.css
    --zs-navbar-bg: rgba(32, 35, 42, 0.72);
    --zs-navbar-icon: #e3e3e3;
    --zs-navbar-hover-bg: rgba(255, 255, 255, 0.12);
+   --zs-panel-bg: rgba(43, 47, 56, 0.9);
  }
  
  /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
@@ -812,7 +814,7 @@ code:style.css
  }
 
 [*# UserScript で追加する部品]
- ライト／ダークモードの切り替えボタン・絵文字の候補・追従する目次・見出しリンクのコピーボタンの見た目
+ ライト／ダークモードの切り替えボタン・絵文字の候補・目次（スマホではヘッダーのボタンから開く）・見出しリンクのコピーボタンの見た目
 code:style.css
  /* ヘッダーのライト／ダークモードの切り替えボタン（自分のアイコンの左隣） */
  .navbar .zs-theme-toggle-item {
@@ -1017,6 +1019,112 @@ code:style.css
    background-color: var(--zs-accent);
  }
  
+ /* スマホ幅では、ヘッダー左端のボタンから目次を開く */
+ .zs-toc-toggle,
+ .zs-toc-scrim,
+ .zs-toc-empty {
+   display: none;
+ }
+ 
+ @media (max-width: 767px) {
+   .navbar .zs-toc-toggle:not([hidden]) {
+     display: flex;
+     flex: none;
+     align-items: center;
+     justify-content: center;
+     width: 32px;
+     height: 32px;
+     margin-right: 2px;
+     padding: 0;
+     color: var(--zs-navbar-icon);
+     background: none;
+     border: none;
+     border-radius: 50%;
+     cursor: pointer;
+   }
+ 
+   .navbar .zs-toc-toggle:hover {
+     background-color: var(--zs-navbar-hover-bg);
+   }
+ 
+   .navbar .zs-toc-toggle:focus-visible {
+     outline: 2px solid var(--zs-accent);
+     outline-offset: 1px;
+   }
+ 
+   .zs-toc-toggle svg {
+     width: 24px;
+     height: 24px;
+     fill: currentColor;
+   }
+ 
+   /* 開いた目次（ヘッダーのすぐ下に、PC と同じ見た目で表示する） */
+   .app:not(.presentation) .zs-toc.is-open {
+     display: block;
+     position: fixed;
+     top: calc(var(--zs-navbar-height) + 8px);
+     right: 8px;
+     left: 8px;
+     z-index: 999;
+     box-sizing: border-box;
+     max-height: min(75vh, calc(100dvh - var(--zs-navbar-height) - 24px));
+     overflow-y: auto;
+     overscroll-behavior: contain;
+     padding: 16px 12px 16px 14px;
+     color: var(--zs-text-muted);
+     background-color: var(--zs-panel-bg);
+     -webkit-backdrop-filter: saturate(180%) blur(16px);
+     backdrop-filter: saturate(180%) blur(16px);
+     border: 1px solid var(--zs-border);
+     border-radius: 12px;
+     box-shadow: var(--zs-shadow);
+     font-size: 14px;
+     line-height: 1.5;
+     letter-spacing: normal;
+     animation: zs-toc-open 0.16s ease-out;
+   }
+ 
+   .zs-toc.is-open .zs-toc-item a {
+     padding-top: 5px;
+     padding-bottom: 5px;
+   }
+ 
+   .zs-toc.is-open .zs-toc-item a::before {
+     top: calc(5px + 0.75em - 3px);
+   }
+ 
+   .zs-toc.is-open .zs-toc-item[data-depth="0"] a::before {
+     top: calc(5px + 0.75em - 5px);
+   }
+ 
+   .zs-toc.is-open .zs-toc-list:empty + .zs-toc-empty {
+     display: block;
+     margin: 0;
+   }
+ 
+   /* 目次の外をタップしたら閉じる */
+   .zs-toc-scrim.is-open {
+     display: block;
+     position: fixed;
+     inset: 0;
+     z-index: 998;
+     background-color: rgba(15, 23, 42, 0.2);
+   }
+ }
+ 
+ @keyframes zs-toc-open {
+   from {
+     opacity: 0;
+     transform: translateY(-6px);
+   }
+ }
+ 
+ @media (prefers-reduced-motion: reduce) {
+   .zs-toc.is-open {
+     animation: none;
+   }
+ }
+ 
  /* 見出しリンクのコピーボタン */
  .zs-heading-link {
    position: absolute;
@@ -1099,6 +1207,7 @@ code:style.css
  @media print {
    .zs-emoji-menu,
    .zs-toc,
+   .zs-toc-scrim,
    .zs-heading-link {
      display: none !important;
    }
@@ -1223,42 +1332,43 @@ code:script.js
 
 [#* 追従する目次]
  画面幅が 1300px 以上のとき、見出しが 2 つ以上あるページでは本文の右に目次を表示し、スクロールに合わせて現在の見出しを強調する
+ スマホ幅（767px 以下）では、ヘッダー左端のボタンから同じ目次を開く
 code:script.js
  // ブロック内の変数は、ほかの機能の変数と衝突しない
  {
-   const MIN_HEADINGS = 2
+   const MIN_HEADINGS = 2 // 広い画面で本文の横に目次を表示する、最小の見出しの数
    const CURRENT_OFFSET = 120 // 画面上端からこの距離までに入った見出しを「現在の見出し」とする
+   // Material Symbols（Apache License 2.0）の menu / close アイコン
+   const MENU_ICON = 'M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z'
+   const CLOSE_ICON = 'm256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z'
  
    const toc = document.createElement('nav')
    toc.className = 'zs-toc'
+   toc.id = 'zs-toc'
    toc.setAttribute('aria-label', '目次')
    const title = document.createElement('p')
    title.className = 'zs-toc-title'
    title.textContent = '目次'
    const list = document.createElement('ol')
    list.className = 'zs-toc-list'
-   toc.append(title, list)
+   const empty = document.createElement('p')
+   empty.className = 'zs-toc-empty'
+   empty.textContent = '見出しはありません'
+   toc.append(title, list, empty)
+ 
+   // スマホ幅でヘッダーに置く、目次を開くボタンと、開いている間に本文を覆う背景
+   const toggle = document.createElement('button')
+   toggle.type = 'button'
+   toggle.className = 'zs-toc-toggle'
+   toggle.hidden = true
+   toggle.setAttribute('aria-controls', toc.id)
+   toggle.innerHTML = '<svg viewBox="0 -960 960 960" aria-hidden="true"><path/></svg>'
+   const scrim = document.createElement('div')
+   scrim.className = 'zs-toc-scrim'
  
    let headings = []
    let signature = ''
    let currentId = null
- 
-   const createItem = heading => {
-     const item = document.createElement('li')
-     item.className = 'zs-toc-item'
-     item.dataset.id = heading.id
-     item.dataset.depth = heading.depth
-     item.style.setProperty('--zs-toc-depth', heading.depth)
-     const link = document.createElement('a')
-     link.href = `#${heading.id}`
-     link.textContent = heading.text || '（無題）'
-     link.addEventListener('click', event => {
-       event.preventDefault()
-       jumpToLine(heading.id)
-     })
-     item.append(link)
-     return item
-   }
  
    // 目次がスクロールできるときは、現在の見出しが見える位置まで目次をスクロールする
    const revealItem = item => {
@@ -1272,9 +1382,41 @@ code:script.js
      }
    }
  
+   const isOpen = () => toc.classList.contains('is-open')
+ 
+   const setOpen = open => {
+     toc.classList.toggle('is-open', open)
+     scrim.classList.toggle('is-open', open)
+     toggle.setAttribute('aria-expanded', String(open))
+     const label = open ? '目次を閉じる' : '目次を開く'
+     toggle.title = label
+     toggle.setAttribute('aria-label', label)
+     toggle.querySelector('path').setAttribute('d', open ? CLOSE_ICON : MENU_ICON)
+     const current = list.querySelector('.is-current')
+     if (open && current) revealItem(current)
+   }
+ 
+   const createItem = heading => {
+     const item = document.createElement('li')
+     item.className = 'zs-toc-item'
+     item.dataset.id = heading.id
+     item.dataset.depth = heading.depth
+     item.style.setProperty('--zs-toc-depth', heading.depth)
+     const link = document.createElement('a')
+     link.href = `#${heading.id}`
+     link.textContent = heading.text || '（無題）'
+     link.addEventListener('click', event => {
+       event.preventDefault()
+       setOpen(false)
+       jumpToLine(heading.id)
+     })
+     item.append(link)
+     return item
+   }
+ 
    const updateCurrent = () => {
-     if (!toc.classList.contains('is-active')) return
-     let id = headings[0]?.id ?? null
+     if (headings.length === 0) return
+     let id = headings[0].id
      for (const heading of headings) {
        const line = document.getElementById(`L${heading.id}`)
        if (!line) continue
@@ -1290,11 +1432,22 @@ code:script.js
      if (current) revealItem(current)
    }
  
+   // ヘッダーの左端にボタンを置く（ヘッダーが描き直されたときは置き直す）
+   const mount = () => {
+     const left = document.querySelector('.navbar .row > .left')
+     if (left && left.firstElementChild !== toggle) left.prepend(toggle)
+     if (!scrim.isConnected) document.body.append(scrim)
+   }
+ 
    const render = () => {
+     mount()
      const column = document.querySelector('.page-column')
-     headings = scrapbox.Layout === 'page' ? getHeadings() : []
-     if (!column || headings.length < MIN_HEADINGS) {
-       toc.classList.remove('is-active')
+     const isPage = Boolean(column) && scrapbox.Layout === 'page'
+     headings = isPage ? getHeadings() : []
+     toggle.hidden = !isPage
+     toc.classList.toggle('is-active', headings.length >= MIN_HEADINGS)
+     if (!isPage) {
+       setOpen(false)
        return
      }
      if (toc.parentElement !== column) column.append(toc)
@@ -1304,7 +1457,6 @@ code:script.js
        currentId = null
        list.replaceChildren(...headings.map(createItem))
      }
-     toc.classList.add('is-active')
      updateCurrent()
    }
  
@@ -1324,9 +1476,24 @@ code:script.js
      })
    }, {passive: true})
  
+   toggle.addEventListener('click', () => setOpen(!isOpen()))
+   scrim.addEventListener('click', () => setOpen(false))
+   document.addEventListener('keydown', event => {
+     if (event.key === 'Escape' && isOpen()) setOpen(false)
+   })
+   // 画面幅が広がってボタンが消えたときは閉じる
+   matchMedia('(min-width: 768px)').addEventListener('change', () => setOpen(false))
+ 
    scrapbox.on('lines:changed', () => scheduleRender())
-   scrapbox.on('page:changed', () => scheduleRender(0))
-   scrapbox.on('layout:changed', () => scheduleRender(0))
+   scrapbox.on('page:changed', () => {
+     setOpen(false)
+     scheduleRender(0)
+   })
+   scrapbox.on('layout:changed', () => {
+     setOpen(false)
+     scheduleRender(0)
+   })
+   setOpen(false)
    scheduleRender(0)
  }
 
