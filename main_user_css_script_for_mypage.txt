@@ -3586,7 +3586,7 @@ code:script.js
        </button>
        <div class="zs-start-option">
          ${svg(ICONS.template)}
-         <span class="zs-start-text"><span class="zs-start-label">テンプレートから作る</span><span class="zs-start-note">タイトルを入力してから選ぶと、テンプレートの本文がこのページに入ります</span></span>
+         <span class="zs-start-text"><span class="zs-start-label">テンプレートから作る</span><span class="zs-start-note">タイトルの末尾が「テンプレート」か「template」のページが下に並びます。タイトルを入力してから選ぶと、その本文がこのページに入ります</span></span>
          <div class="zs-start-choices zs-start-templates"></div>
        </div>
        <div class="zs-start-option zs-start-drop">
@@ -3669,7 +3669,7 @@ code:script.js
        return
      }
      if (templates.length === 0) {
-       templateList.innerHTML = '<span class="zs-start-hint">タイトルの末尾が「テンプレート」または「template」のページが、ここに表示されます</span>'
+       templateList.innerHTML = '<span class="zs-start-hint">テンプレートのページはまだありません</span>'
        return
      }
      templateList.replaceChildren(...templates.map(title => {
