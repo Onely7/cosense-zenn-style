@@ -11,17 +11,27 @@ code:style.css
  .status-bar>div {
    background-color: #f1f5f9;
  }
- .grid li.page-list-item a .header {
-   border-top: #d6e3ed solid 10px;
+ :root {
+   /* ページ一覧・関連ページのカード上端の色（Cosense の変数） */
+   --card-title-bg: #d6e3ed;
  }
- .related-page-list .grid li {
-     card-title-bg: #f1f5f9;
+ .grid li.page-list-item a .header {
+   border-top-width: 10px;
  }
  
 
 code: style.css
- .col-page {
-     max-width: 1280px;
+ /* 本文幅。Cosense のグリッドの列幅を変数で指定する（初期値は Cosense 標準と同じ 960px） */
+ :root {
+   --zs-page-width: 960px;
+ }
+ @media (min-width: 768px) {
+   .app:not(.presentation) .page-column:not(:has(> .page-sidebar)) {
+     grid-template-columns: minmax(200px, var(--zs-page-width)) min-content;
+   }
+   .app:not(.presentation) .container:has(> .page-column) {
+     max-width: max(1200px, calc(var(--zs-page-width) + 72px));
+   }
  }
  
  .editor {
