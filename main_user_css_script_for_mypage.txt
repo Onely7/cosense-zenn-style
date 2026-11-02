@@ -99,7 +99,7 @@ code:style.css
  	width: 100%;
  	margin: .25em 0;
 		padding: .25em 0;
-	 	padding-left: calc(var(--left-total) - 6px);
+	 	padding-left: calc(var(--left-total) - 5px);
 		border-left: 5px solid #edf2f7;
 	}
 
