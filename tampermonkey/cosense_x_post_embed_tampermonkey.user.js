@@ -690,35 +690,78 @@
   const getAvatarUrl = (user) =>
     user?.profile_image_url_https || user?.profile_image_url || "";
 
-  const collectTextEntities = (tweet, start, end, hasVisualMedia) => {
+  const HTML_REFERENCES = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    "#39": "'",
+  };
+
+  /*
+   * X の本文では & < > が文字参照（&amp; など）になっている。
+   * また、URL やメンションの位置（indices）と表示範囲（display_text_range）は、
+   * 絵文字なども 1 文字と数えた文字数で示される。
+   *
+   * 文字参照を元の文字に戻した本文を 1 文字ずつの配列（chars）にし、
+   * 文字参照のままの本文での位置を、chars での位置へ変換する表（offsets）を作る。
+   */
+  const decodeTweetText = (text) => {
+    const source = Array.from(String(text || ""));
+    const chars = [];
+    const offsets = new Array(source.length + 1);
+
+    for (let index = 0; index < source.length; ) {
+      offsets[index] = chars.length;
+
+      const reference =
+        source[index] === "&"
+          ? /^&(amp|lt|gt|quot|#39);/.exec(
+              source.slice(index, index + 6).join(""),
+            )
+          : null;
+
+      if (reference) {
+        for (let offset = 1; offset < reference[0].length; offset += 1) {
+          offsets[index + offset] = chars.length;
+        }
+
+        chars.push(HTML_REFERENCES[reference[1]]);
+        index += reference[0].length;
+      } else {
+        chars.push(source[index]);
+        index += 1;
+      }
+    }
+
+    offsets[source.length] = chars.length;
+
+    return { chars, offsets };
+  };
+
+  const collectTextEntities = (tweet, hasVisualMedia) => {
     const entities = tweet?.entities || {};
     const items = [];
 
-    const push = (entity, type, href, label) => {
+    /*
+     * surface は、本文中でそのエンティティが占める文字列。
+     * 位置の数え方（文字参照のままか、元の文字に戻した後か）の判定に使う。
+     */
+    const push = (entity, type, href, label, surface) => {
       const indices = entity?.indices;
 
       if (!Array.isArray(indices) || indices.length !== 2) {
         return;
       }
 
-      const rawStart = Number(indices[0]);
-      const rawEnd = Number(indices[1]);
+      const start = Number(indices[0]);
+      const end = Number(indices[1]);
 
-      if (!Number.isFinite(rawStart) || !Number.isFinite(rawEnd)) {
+      if (!Number.isInteger(start) || !Number.isInteger(end) || end <= start) {
         return;
       }
 
-      if (rawEnd <= start || rawStart >= end) {
-        return;
-      }
-
-      items.push({
-        start: Math.max(rawStart, start) - start,
-        end: Math.min(rawEnd, end) - start,
-        type,
-        href,
-        label,
-      });
+      items.push({ start, end, type, href, label, surface });
     };
 
     (entities.urls || []).forEach((entity) => {
@@ -727,6 +770,7 @@
         "link",
         entity.expanded_url || entity.url,
         entity.display_url || entity.expanded_url || entity.url,
+        entity.url,
       );
     });
 
@@ -735,6 +779,7 @@
         entity,
         "link",
         `https://x.com/${entity.screen_name}`,
+        `@${entity.screen_name}`,
         `@${entity.screen_name}`,
       );
     });
@@ -745,6 +790,7 @@
         "link",
         `https://x.com/hashtag/${encodeURIComponent(entity.text)}`,
         `#${entity.text}`,
+        `#${entity.text}`,
       );
     });
 
@@ -753,6 +799,7 @@
         entity,
         "link",
         `https://x.com/search?q=%24${encodeURIComponent(entity.text)}`,
+        `$${entity.text}`,
         `$${entity.text}`,
       );
     });
@@ -763,12 +810,11 @@
         hasVisualMedia ? "remove" : "link",
         entity.expanded_url || entity.url,
         entity.display_url || entity.expanded_url || entity.url,
+        entity.url,
       );
     });
 
-    return items
-      .filter((item) => item.end > item.start)
-      .sort((a, b) => a.start - b.start || b.end - a.end);
+    return items;
   };
 
   const renderTweetText = (tweet) => {
@@ -776,17 +822,7 @@
 
     container.className = "x-static-text";
 
-    const text = String(tweet?.text || "");
-
-    const range = Array.isArray(tweet?.display_text_range)
-      ? tweet.display_text_range
-      : [0, text.length];
-
-    const start = Math.max(0, Number(range[0]) || 0);
-
-    const end = Math.min(text.length, Number(range[1]) || text.length);
-
-    const visibleText = text.slice(start, end);
+    const { chars, offsets } = decodeTweetText(tweet?.text);
 
     const hasVisualMedia = Boolean(
       (Array.isArray(tweet?.photos) && tweet.photos.length) ||
@@ -794,20 +830,67 @@
       tweet?.video,
     );
 
-    const entities = collectTextEntities(tweet, start, end, hasVisualMedia);
+    const entities = collectTextEntities(tweet, hasVisualMedia);
+
+    /*
+     * 位置が文字参照のままの本文で数えたものか、元の文字に戻した本文で数えたものかを、
+     * エンティティの位置にその文字列があるかどうかで判定する。
+     */
+    const fromEncoded = (index) => offsets[Math.min(index, offsets.length - 1)];
+    const fromDecoded = (index) => Math.min(index, chars.length);
+
+    const countMatches = (toPosition) =>
+      entities.filter(
+        (entity) =>
+          chars
+            .slice(toPosition(entity.start), toPosition(entity.end))
+            .join("")
+            .toLowerCase() === String(entity.surface || "").toLowerCase(),
+      ).length;
+
+    const toPosition =
+      countMatches(fromEncoded) > countMatches(fromDecoded)
+        ? fromEncoded
+        : fromDecoded;
+
+    const range = Array.isArray(tweet?.display_text_range)
+      ? tweet.display_text_range
+      : [0, chars.length];
+
+    const start = toPosition(Math.max(0, Number(range[0]) || 0));
+
+    const end = Math.max(
+      start,
+      toPosition(Math.max(0, Number(range[1]) || chars.length)),
+    );
+
+    const visible = entities
+      .map((entity) => ({
+        ...entity,
+        start: Math.max(toPosition(entity.start), start) - start,
+        end: Math.min(toPosition(entity.end), end) - start,
+      }))
+      .filter((entity) => entity.end > entity.start)
+      .sort((a, b) => a.start - b.start || b.end - a.end);
+
+    const visibleChars = chars.slice(start, end);
 
     let cursor = 0;
 
-    entities.forEach((entity) => {
+    const appendText = (from, to) => {
+      if (to > from) {
+        container.appendChild(
+          document.createTextNode(visibleChars.slice(from, to).join("")),
+        );
+      }
+    };
+
+    visible.forEach((entity) => {
       if (entity.start < cursor) {
         return;
       }
 
-      if (entity.start > cursor) {
-        container.appendChild(
-          document.createTextNode(visibleText.slice(cursor, entity.start)),
-        );
-      }
+      appendText(cursor, entity.start);
 
       if (entity.type === "link") {
         const link = makeExternalLink(entity.href);
@@ -819,14 +902,19 @@
       cursor = entity.end;
     });
 
-    if (cursor < visibleText.length) {
-      container.appendChild(document.createTextNode(visibleText.slice(cursor)));
+    appendText(cursor, visibleChars.length);
+
+    // 画像の URL を取り除いた後に残る、末尾の空白や改行を消す
+    const last = container.lastChild;
+
+    if (last?.nodeType === Node.TEXT_NODE) {
+      last.textContent = last.textContent.trimEnd();
     }
 
     if (tweet?.note_tweet) {
       const suffix = document.createElement("span");
 
-      suffix.appendChild(document.createTextNode(" "));
+      suffix.appendChild(document.createTextNode("… "));
 
       const more = makeExternalLink(tweetUrl(tweet));
 
