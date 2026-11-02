@@ -104,6 +104,7 @@ code:style.css
    --zs-surface-muted: rgba(255, 255, 255, 0.07);
    --zs-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
    --zs-bullet: rgba(255, 255, 255, 0.45);
+   --zs-accent-strong: var(--zs-accent); /* 暗い背景の上でも読みやすい明るさにする（リンクや目次の現在の見出しなど） */
  
    --zs-heading-1: rgba(255, 255, 255, 0.22);
    --zs-heading-2: rgba(62, 168, 255, 0.4);
@@ -1394,7 +1395,7 @@ code:style.css
  }
  
  .zs-heading-link.is-copied {
-   color: #fff;
+   color: var(--zs-surface); /* ダーク系テーマでは明るい青の上に暗い色のチェックを表示する */
    background-color: var(--zs-accent-strong);
    border-color: var(--zs-accent-strong);
  }
