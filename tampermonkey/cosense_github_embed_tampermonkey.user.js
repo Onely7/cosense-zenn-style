@@ -4,6 +4,9 @@
 // @version      1.0.0
 // @description  Embed standalone public GitHub text-file URLs in Cosense with a Zenn-like card.
 // @author       Onely7
+// @homepageURL  https://github.com/Onely7/cosense-zenn-style
+// @downloadURL  https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_github_embed_tampermonkey.user.js
+// @updateURL    https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_github_embed_tampermonkey.user.js
 // @match        https://scrapbox.io/*
 // @match        https://cosense.io/*
 // @match        https://cosen.se/*

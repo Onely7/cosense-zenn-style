@@ -4,6 +4,9 @@
 // @version      1.0.0
 // @description  Render standalone X/Twitter post URLs in Cosense as static Zenn-like cards without iframes.
 // @author       Onely7
+// @homepageURL  https://github.com/Onely7/cosense-zenn-style
+// @downloadURL  https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_x_post_embed_tampermonkey.user.js
+// @updateURL    https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_x_post_embed_tampermonkey.user.js
 // @match        https://scrapbox.io/*
 // @match        https://cosense.io/*
 // @match        https://cosen.se/*
