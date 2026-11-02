@@ -67,7 +67,8 @@ code:style.css
  
    /* 編集中の行・テキストカーソル */
    --zs-cursor-line-bg: #3ea8ff14;
-   --zs-caret: #3ea8ff;
+   --zs-caret: #0b63c4; /* 背景と同化しにくい濃い青 */
+   --zs-caret-halo: rgba(255, 255, 255, 0.9); /* 色の付いた背景の上でも見えるように付ける縁取り */
  }
  
  /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
@@ -116,6 +117,8 @@ code:style.css
    --zs-table-editing-bg: rgba(62, 168, 255, 0.14);
  
    --zs-cursor-line-bg: rgba(62, 168, 255, 0.12);
+   --zs-caret: #9ad0ff;
+   --zs-caret-halo: rgba(0, 0, 0, 0.7);
  }
  
  /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
@@ -286,7 +289,8 @@ code:style.css
    background-color: var(--zs-cursor-line-bg);
  }
 
-[*# カーソル点滅]
+[*# テキストカーソル]
+ 点滅させず、色の付いた背景の上でも埋もれないように縁取りを付ける
 code:style.css
  /*
   * テキストカーソル（キャレット）の色と太さ。
@@ -298,23 +302,16 @@ code:style.css
  body {
    caret-color: var(--zs-caret);
  }
+ .cursor-container .cursor {
+   animation: none;
+   opacity: 1;
+ }
+ .cursor-container .cursor svg {
+   overflow: visible;
+   filter: drop-shadow(0 0 1px var(--zs-caret-halo));
+ }
  .cursor-container .cursor svg rect {
    width: 2px;
- }
- 
- .cursor-container .cursor {
-   animation: zs-cursor-blink 1s infinite;
- }
- @keyframes zs-cursor-blink {
-   0%, 50% { opacity: 0; }
-   51%, 100% { opacity: 1; }
- }
- 
- /* 視差効果を減らす設定のときは点滅させない */
- @media (prefers-reduced-motion: reduce) {
-   .cursor-container .cursor {
-     animation: none;
-   }
  }
 
 [*# 箇条書きスタイル変更]
