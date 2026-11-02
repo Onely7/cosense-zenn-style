@@ -362,7 +362,8 @@ code:style.css
    display: flex !important;
    align-items: stretch !important;
 	
-   width: 100% !important;
+   /* インデントした表は Cosense が行へ margin-left を付けるため、auto にして本文幅からはみ出さないようにする */
+   width: auto !important;
    max-width: 100% !important;
    height: auto !important;
  }
