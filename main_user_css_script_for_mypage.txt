@@ -73,6 +73,8 @@ code:style.css
    /* ヘッダー */
    --zs-navbar-height: 48px; /* Cosense 標準は 40px */
    --zs-navbar-bg: rgba(255, 255, 255, 0.72); /* すりガラス風の半透明の背景 */
+   --zs-navbar-icon: #1f1f1f; /* ライト／ダークモードの切り替えボタンなど */
+   --zs-navbar-hover-bg: rgba(31, 31, 31, 0.08);
  }
  
  /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
@@ -84,7 +86,7 @@ code:style.css
  }
 
 [*# ダーク系テーマ]
- プロジェクトのテーマが default-dark, paper-dark-dark, hacker1, hacker2 のときは、暗い背景向けの配色に切り替える
+ プロジェクトのテーマが default-dark, paper-dark-dark, hacker1, hacker2 のとき（ヘッダーのボタンでダークモードにしたときを含む）は、暗い背景向けの配色に切り替える
  背景など Cosense 本体の部分は、テーマの配色をそのまま使う
 code:style.css
  :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) {
@@ -125,6 +127,8 @@ code:style.css
    --zs-caret-halo: rgba(0, 0, 0, 0.7);
  
    --zs-navbar-bg: rgba(32, 35, 42, 0.72);
+   --zs-navbar-icon: #e3e3e3;
+   --zs-navbar-hover-bg: rgba(255, 255, 255, 0.12);
  }
  
  /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
@@ -808,8 +812,40 @@ code:style.css
  }
 
 [*# UserScript で追加する部品]
- 絵文字の候補・追従する目次・見出しリンクのコピーボタンの見た目
+ ライト／ダークモードの切り替えボタン・絵文字の候補・追従する目次・見出しリンクのコピーボタンの見た目
 code:style.css
+ /* ヘッダーのライト／ダークモードの切り替えボタン（自分のアイコンの左隣） */
+ .navbar .zs-theme-toggle-item {
+   display: flex;
+   align-items: center;
+ }
+ .zs-theme-toggle {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 32px;
+   height: 32px;
+   padding: 0;
+   color: var(--zs-navbar-icon);
+   background: none;
+   border: none;
+   border-radius: 50%;
+   cursor: pointer;
+   transition: background-color 0.15s ease;
+ }
+ .zs-theme-toggle:hover {
+   background-color: var(--zs-navbar-hover-bg);
+ }
+ .zs-theme-toggle:focus-visible {
+   outline: 2px solid var(--zs-accent);
+   outline-offset: 1px;
+ }
+ .zs-theme-toggle svg {
+   width: 24px;
+   height: 24px;
+   fill: currentColor;
+ }
+ 
  /* 絵文字の候補 */
  .zs-emoji-menu {
    position: absolute;
@@ -1734,4 +1770,97 @@ code:script.js
        }
      }
    })
+ }
+
+[#* ライト／ダークモードの切り替え]
+ ヘッダーの自分のアイコンの左隣に、ライトモードとダークモードを切り替えるボタンを置く
+ 選んだモードはブラウザに保存し、すべてのプロジェクトで使う。プロジェクトのテーマと同じ明るさに戻すと、テーマの設定に従う
+code:script.js
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   // Material Symbols（Apache License 2.0）の light_mode / dark_mode アイコン
+   const ICONS = {
+     light: 'M565-395q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35Zm-226.5 56.5Q280-397 280-480t58.5-141.5Q397-680 480-680t141.5 58.5Q680-563 680-480t-58.5 141.5Q563-280 480-280t-141.5-58.5ZM200-440H40v-80h160v80Zm720 0H760v-80h160v80ZM440-760v-160h80v160h-80Zm0 720v-160h80v160h-80ZM256-650l-101-97 57-59 96 100-52 56Zm492 496-97-101 53-55 101 97-57 59Zm-98-550 97-101 59 57-100 96-56-52ZM154-212l101-97 55 53-97 101-59-57Zm326-268Z',
+     dark: 'M480-120q-150 0-255-105T120-480q0-150 105-255t255-105q14 0 27.5 1t26.5 3q-41 29-65.5 75.5T444-660q0 90 63 153t153 63q55 0 101-24.5t75-65.5q2 13 3 26.5t1 27.5q0 150-105 255T480-120Zm0-80q88 0 158-48.5T740-375q-20 5-40 8t-40 3q-123 0-209.5-86.5T364-660q0-20 3-40t8-40q-78 32-126.5 102T200-480q0 116 82 198t198 82Zm-10-270Z'
+   }
+   const DARK_THEMES = ['default-dark', 'paper-dark-dark', 'hacker1', 'hacker2']
+   const STORAGE_KEY = 'zs-color-mode' // 'light' か 'dark'。ないときはプロジェクトのテーマに従う
+   const root = document.documentElement
+   const isDark = theme => DARK_THEMES.includes(theme)
+ 
+   let projectTheme = root.dataset.projectTheme || 'default' // プロジェクトに設定されたテーマ
+   let appliedTheme = null
+ 
+   const readMode = () => {
+     try {
+       return localStorage.getItem(STORAGE_KEY)
+     } catch {
+       return null
+     }
+   }
+ 
+   const writeMode = mode => {
+     try {
+       if (mode) localStorage.setItem(STORAGE_KEY, mode)
+       else localStorage.removeItem(STORAGE_KEY)
+     } catch {}
+   }
+ 
+   // 選んだモードで使うテーマ。プロジェクトのテーマと系統（paper など）をそろえる
+   const themeFor = mode => {
+     if (mode === 'dark' && !isDark(projectTheme)) return projectTheme.startsWith('paper') ? 'paper-dark-dark' : 'default-dark'
+     if (mode === 'light' && isDark(projectTheme)) return projectTheme.startsWith('paper') ? 'paper-light' : 'default'
+     return projectTheme
+   }
+ 
+   const button = document.createElement('button')
+   button.type = 'button'
+   button.className = 'zs-theme-toggle'
+   button.innerHTML = '<svg viewBox="0 -960 960 960" aria-hidden="true"><path/></svg>'
+   const item = document.createElement('li')
+   item.className = 'zs-theme-toggle-item'
+   item.append(button)
+ 
+   const apply = () => {
+     const theme = themeFor(readMode())
+     appliedTheme = theme
+     if (root.dataset.projectTheme !== theme) root.dataset.projectTheme = theme
+     // 押すと切り替わる先のモードのアイコンを表示する
+     const dark = isDark(theme)
+     button.querySelector('path').setAttribute('d', dark ? ICONS.light : ICONS.dark)
+     const label = dark ? 'ライトモードに切り替える' : 'ダークモードに切り替える'
+     button.title = label
+     button.setAttribute('aria-label', label)
+   }
+ 
+   button.addEventListener('click', () => {
+     const dark = !isDark(root.dataset.projectTheme)
+     // プロジェクトのテーマと同じ明るさに戻したときは、設定を消してテーマに従う
+     writeMode(dark === isDark(projectTheme) ? null : dark ? 'dark' : 'light')
+     apply()
+   })
+ 
+   // 別のプロジェクトへの移動などで Cosense がテーマを設定し直したときは、そのテーマを基準に選び直す
+   new MutationObserver(() => {
+     const theme = root.dataset.projectTheme
+     if (theme === appliedTheme) return
+     projectTheme = theme || 'default'
+     apply()
+   }).observe(root, {attributes: true, attributeFilter: ['data-project-theme']})
+ 
+   // ほかのタブで切り替えたときにも合わせる
+   window.addEventListener('storage', event => {
+     if (event.key === STORAGE_KEY) apply()
+   })
+ 
+   // ヘッダーの自分のアイコンの左隣に置く（ヘッダーが描き直されたときは置き直す）
+   const mount = () => {
+     const userMenu = document.querySelector('.navbar .navbar-menu > .user-menu-dropdown')
+     if (userMenu && item.nextElementSibling !== userMenu) userMenu.before(item)
+   }
+ 
+   apply()
+   mount()
+   scrapbox.on('page:changed', mount)
+   scrapbox.on('layout:changed', mount)
  }
