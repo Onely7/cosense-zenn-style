@@ -135,25 +135,31 @@ code:style.css
 
 [*#  カーソル点滅]
 code:style.css
- .cursor {
-   animation: blink 1s infinite;
+ .cursor-container .cursor {
+   animation: zs-cursor-blink 1s infinite;
  }
- @keyframes blink {
+ @keyframes zs-cursor-blink {
    0% { opacity: 0; }
    50% { opacity: 0; }
    51% { opacity: 1; }
    100% { opacity: 1;}
  }
  
- /* テキストカーソル（キャレット）の色 */
+ /* 視差効果を減らす設定のときは点滅させない */
+ @media (prefers-reduced-motion: reduce) {
+   .cursor-container .cursor {
+     animation: none;
+   }
+ }
+ 
+ /* テキストカーソル（キャレット）の色。Cosense のカーソルは SVG なので --cursor-color で塗る */
   body {
     --caret-color: #3ea8ff;
+    --cursor-color: var(--caret-color);
     caret-color: var(--caret-color);
   }
-  
-  /* コードブロック内の色と同化しないよう、テキストカーソルの背景に白色を適用 */
-  .cursor {
-    background-color: white !important;
+  .cursor-container .cursor svg rect {
+    width: 2px;
   }
 
 [*# 箇条書きスタイル変更]
@@ -322,12 +328,15 @@ code:style.css
    background-color: #3b4b63;
  }
  
- /* 暗いコード背景でも埋もれない、高コントラストなテキストカーソル */
- .line.cursor-line:has(.code-block) .cursor {
-   background-color: #ffd166 !important;
-   box-shadow:
-     0 0 0 1px rgba(26, 38, 56, 0.95),
-     0 0 5px rgba(255, 209, 102, 0.8);
+ /*
+  * 暗いコード背景でも埋もれない、高コントラストなテキストカーソル。
+  * カーソル要素は .line の外（#editor の直下）にあるため、.editor 側で判定する。
+  */
+ .editor:has(.line.cursor-line .code-block) {
+   --cursor-color: #ffd166;
+ }
+ .editor:has(.line.cursor-line .code-block) .cursor svg {
+   filter: drop-shadow(0 0 2px rgba(255, 209, 102, 0.9));
  }
  
  body:has(.line.cursor-line .code-block) #text-input {
