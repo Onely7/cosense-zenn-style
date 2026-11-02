@@ -931,7 +931,7 @@ code:style.css
      position: sticky;
      top: calc(var(--zs-navbar-height) + 16px);
      box-sizing: border-box;
-     max-height: calc(100vh - var(--zs-navbar-height) - 32px);
+     max-height: min(75vh, calc(100vh - var(--zs-navbar-height) - 32px)); /* はみ出す分は目次の中でスクロールする */
      overflow-y: auto;
      overscroll-behavior: contain;
      padding: 16px 12px 16px 14px;
