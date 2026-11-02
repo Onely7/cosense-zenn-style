@@ -40,6 +40,14 @@ code: style.css
      letter-spacing: 0.5px;
  }
  
+ /* スマホ幅では文字を少し小さくして、コードや表の折り返しを減らす */
+ @media (max-width: 767px) {
+   .editor {
+     font-size: 16px;
+     line-height: 28px;
+   }
+ }
+ 
 
 [*# マーカー強調]
 	`[! hoge moga]` → [! hoge moga]
@@ -112,6 +120,22 @@ code:style.css
 	 	padding-left: calc(var(--left-total) - 5px);
 		border-left: 5px solid #edf2f7;
 	}
+ 
+ /* スマホ幅では大きな見出しの文字を控えめにして、折り返しを減らす */
+ @media (max-width: 767px) {
+   .line strong.level-5:has(> .deco-\#) {
+     font-size: 1.6em;
+     line-height: 1.4;
+   }
+   .line strong.level-4:has(> .deco-\#) {
+     font-size: 1.45em;
+     line-height: 1.4;
+   }
+   .line strong.level-3:has(> .deco-\#) {
+     font-size: 1.3em;
+     line-height: 1.4;
+   }
+ }
 
 [*# チェックボックス] 
  `[_]` -> [_]
@@ -334,6 +358,13 @@ code:style.css
  .line span.code-block .hljs-addition {
    color: #b4ff9b;
  }
+ 
+ /* スマホ幅ではコードの文字を少し小さくして、折り返しを減らす */
+ @media (max-width: 767px) {
+   .line span.code-block code.code-body {
+     font-size: 0.85em;
+   }
+ }
 	
  
  /* コードブロック編集中のカーソルと現在行を見やすくする */
@@ -523,6 +554,20 @@ code:style.css
  }
 	
 	
+ /* スマホ幅では余白をさらに詰めて、1 列あたりの文字数を確保する */
+ @media (max-width: 767px) {
+   .line:not(.cursor-line) .table-block .cell {
+     padding: 0.35rem;
+   }
+ 
+   .line:not(.cursor-line)
+   .table-block-row:has(> .cell:nth-child(4))
+   .cell {
+     padding: 0.25rem;
+   }
+ }
+	
+	
  /* 先頭行を見出し行として表示する */
  .line:has(.table-block-start) + .line .table-block .cell,
  .section-title + .line .table-block .cell {
@@ -586,6 +631,29 @@ code:style.css
  /* モバイル表示の検索ボタン */
  a.mobile-search-toggle {
    color: var(--header-muted-color) !important;
+ }
+ 
+ /*
+  * ページメニューへ UserScript で追加した画像アイコン（見出し・emoji）。
+  * PC では標準のアイコンと同じ灰色に、スマホの暗いメニューバーでは白にする。
+  */
+ .page-menu .page-menu-extension img.extension-btn {
+   opacity: 0.55;
+ }
+ 
+ .expandable-menu .page-menu .page-menu-extension img.extension-btn {
+   opacity: 0.9;
+   filter: invert(1);
+ }
+ 
+ /* 見出しメニューなどの長い項目を、画面幅に収まるように折り返す */
+ .page-menu-extension .dropdown-menu {
+   max-width: min(360px, calc(100vw - 16px));
+ }
+ 
+ .page-menu-extension .dropdown-menu .extension-item a {
+   white-space: normal;
+   overflow-wrap: anywhere;
  }
 
 
