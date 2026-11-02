@@ -77,16 +77,61 @@ code:style.css
    }
  }
 
+[*# ダーク系テーマ]
+ プロジェクトのテーマが default-dark, paper-dark-dark, hacker1, hacker2 のときは、暗い背景向けの配色に切り替える
+ ナビゲーションバーや背景など Cosense 本体の部分は、テーマの配色をそのまま使う
+code:style.css
+ :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) {
+   --zs-text: rgba(255, 255, 255, 0.87);
+   --zs-text-muted: rgba(255, 255, 255, 0.6);
+   --zs-icon-muted: rgba(255, 255, 255, 0.6);
+   --zs-border: rgba(255, 255, 255, 0.16);
+   --zs-surface: var(--page-bg, #2b3038);
+   --zs-surface-muted: rgba(255, 255, 255, 0.07);
+   --zs-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+   --zs-bullet: rgba(255, 255, 255, 0.45);
+ 
+   --zs-heading-1: rgba(255, 255, 255, 0.22);
+   --zs-heading-2: rgba(62, 168, 255, 0.4);
+   --zs-heading-3: rgba(62, 168, 255, 0.65);
+ 
+   --zs-marker-text: var(--zs-text);
+   --zs-marker-bg: rgba(255, 196, 0, 0.22);
+   --zs-subheading-bg: rgba(62, 168, 255, 0.18);
+ 
+   --zs-quote-text: rgba(255, 255, 255, 0.7);
+   --zs-quote-border: rgba(255, 255, 255, 0.35);
+   --zs-quote-editing-bg: rgba(255, 255, 255, 0.05);
+ 
+   --zs-inline-code-text: #e6edf3;
+   --zs-inline-code-bg: rgba(255, 255, 255, 0.1);
+   --zs-code-bg: #161f2c;
+   --zs-code-bg-editing: #1f2c3e;
+   --zs-code-title-bg: #26324a;
+   --zs-code-title-bg-editing: #31405a;
+ 
+   --zs-table-cell-bg: transparent;
+   --zs-table-head-bg: rgba(255, 255, 255, 0.07);
+   --zs-table-editing-bg: rgba(62, 168, 255, 0.14);
+ 
+   --zs-cursor-line-bg: rgba(62, 168, 255, 0.12);
+ }
+ 
+ /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
+ :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .page-menu .page-menu-extension img.extension-btn {
+   filter: invert(1);
+ }
+
 [*# 外観]
 code:style.css
- /* 背景・ステータスバー・カードの色を Zenn 風にそろえる */
- :root {
+ /* 明るいテーマでは、背景・ステータスバー・カードの色を Zenn 風にそろえる */
+ :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) {
    --card-title-bg: var(--zs-border); /* ページ一覧・関連ページのカード上端の色 */
  }
- body {
+ :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) body {
    background-color: var(--zs-body-bg);
  }
- .status-bar > div {
+ :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .status-bar > div {
    background-color: var(--zs-surface-muted);
  }
  .grid li.page-list-item a .header {
@@ -629,7 +674,7 @@ code:style.css
 
 [*# ヘッダーメニュー]
 code:style.css
- .navbar {
+ :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .navbar {
    /* project name */
    --navbar-title-color: var(--zs-icon-muted);
  
@@ -651,7 +696,7 @@ code:style.css
   * アイコンが本来持っている色と濃淡をそのまま表示する。
   */
  
- .search-form .form-group input {
+ :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .search-form .form-group input {
    background-color: var(--zs-surface-muted);
    border: solid var(--zs-border) 0.5px;
  }
@@ -670,7 +715,7 @@ code:style.css
  }
  
  /* モバイル表示の検索ボタン */
- a.mobile-search-toggle {
+ :root:not([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) a.mobile-search-toggle {
    color: var(--zs-icon-muted) !important;
  }
  
