@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cosense Zenn-style X Post Embed (Static)
 // @namespace    https://x.com/
-// @version      1.0.0
+// @version      1.1.0
 // @description  Render standalone X/Twitter post URLs in Cosense as static Zenn-like cards without iframes.
 // @author       Onely7
 // @homepageURL  https://github.com/Onely7/cosense-zenn-style
@@ -48,25 +48,53 @@
   }
 
   GM_addStyle(`
+    /*
+     * カードの配色。Cosense のダーク系テーマでは暗い配色にする。
+     * Cosense Zenn Style の UserCSS を使っているときは、その配色（--zs-*）に合わせる。
+     *
+     * カードの幅は、UserCSS で --zs-x-embed-width を指定すると変えられる（初期値 550px。本文の幅より広くはならない）。
+     */
     .x-static-embed-host {
+      --x-text: #0f1419;
+      --x-muted: #65717b;
+      --x-border: #d6e3ed;
+      --x-link: #0f83fd;
+      --x-hover: #1283fd;
+      --x-bg: #fff;
+      --x-bg-subtle: #fbfcfd;
+      --x-fill: #edf2f7;
+      --x-panel: #f6f8fa;
+      --x-warning-text: #9a6700;
+      --x-warning-bg: #fff8c5;
+      --x-warning-border: #e6d477;
       display: block;
       box-sizing: border-box;
-      width: min(100%, 550px);
+      width: min(100%, var(--zs-x-embed-width, 550px));
       min-width: 0;
-      max-width: 550px;
       margin: 0.65em auto 0.9em;
     }
 
+    :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .x-static-embed-host {
+      --x-text: var(--zs-text, rgba(255, 255, 255, 0.87));
+      --x-muted: var(--zs-text-muted, rgba(255, 255, 255, 0.6));
+      --x-border: var(--zs-border, rgba(255, 255, 255, 0.16));
+      --x-link: var(--zs-accent, #3ea8ff);
+      --x-hover: #6cbcff;
+      --x-bg: var(--zs-surface, #22272e);
+      --x-bg-subtle: color-mix(in srgb, var(--x-bg), #fff 3%);
+      --x-fill: rgba(255, 255, 255, 0.07);
+      --x-panel: color-mix(in srgb, var(--x-bg), #fff 5%);
+      --x-warning-text: #e3b341;
+      --x-warning-bg: rgba(187, 128, 9, 0.15);
+      --x-warning-border: rgba(187, 128, 9, 0.4);
+    }
+
     .x-static-card {
-      --x-border: #d6e3ed;
-      --x-muted: #65717b;
-      --x-link: #0f83fd;
-      --x-hover: #1283fd;
       box-sizing: border-box;
       width: 100%;
       overflow: hidden;
-      color: #0f1419;
-      background: #fff;
+      color: var(--x-text);
+      background: var(--x-bg);
       border: 1px solid var(--x-border);
       border-radius: 14px;
       font-family:
@@ -83,7 +111,7 @@
 
     .x-static-section.is-parent {
       padding-bottom: 13px;
-      background: #fbfcfd;
+      background: var(--x-bg-subtle);
     }
 
     .x-static-thread-divider {
@@ -115,7 +143,7 @@
       width: 40px;
       height: 40px;
       object-fit: cover;
-      background: #edf2f7;
+      background: var(--x-fill);
       border-radius: 50%;
     }
 
@@ -133,7 +161,7 @@
     .x-static-author-name {
       min-width: 0;
       overflow: hidden;
-      color: #0f1419 !important;
+      color: var(--x-text) !important;
       font-weight: 700;
       line-height: 1.25;
       text-overflow: ellipsis;
@@ -170,7 +198,7 @@
 
     .x-static-logo {
       align-self: start;
-      color: #0f1419;
+      color: var(--x-text) !important;
       font-size: 23px;
       font-weight: 700;
       line-height: 1;
@@ -180,7 +208,7 @@
     .x-static-text {
       margin-top: 12px;
       overflow-wrap: anywhere;
-      color: #0f1419;
+      color: var(--x-text);
       font-size: 1.08em;
       line-height: 1.48;
       white-space: pre-wrap;
@@ -202,7 +230,7 @@
       gap: 2px;
       margin-top: 12px;
       overflow: hidden;
-      background: #edf2f7;
+      background: var(--x-fill);
       border: 1px solid var(--x-border);
       border-radius: 12px;
     }
@@ -216,7 +244,7 @@
       display: block;
       min-height: 150px;
       overflow: hidden;
-      background: #edf2f7;
+      background: var(--x-fill);
       text-decoration: none !important;
     }
 
@@ -262,7 +290,7 @@
       margin-top: 12px;
       padding: 14px;
       color: var(--x-muted);
-      background: #f6f8fa;
+      background: var(--x-panel);
       border: 1px solid var(--x-border);
       border-radius: 12px;
       text-align: center;
@@ -330,7 +358,7 @@
     }
 
     .x-static-stat strong {
-      color: #0f1419;
+      color: var(--x-text);
       font-weight: 650;
     }
 
@@ -339,8 +367,8 @@
       box-sizing: border-box;
       margin-top: 11px;
       padding: 8px 12px;
-      color: #0f83fd !important;
-      background: #fff;
+      color: var(--x-link) !important;
+      background: var(--x-bg);
       border: 1px solid var(--x-border);
       border-radius: 999px;
       font-weight: 650;
@@ -349,8 +377,8 @@
     }
 
     .x-static-open:hover {
-      color: #1283fd !important;
-      background: #f6f8fa;
+      color: var(--x-hover) !important;
+      background: var(--x-panel);
     }
 
     .x-static-loading,
@@ -358,9 +386,9 @@
       box-sizing: border-box;
       width: 100%;
       padding: 0.8rem 1rem;
-      color: #65717b;
-      background: #f6f8fa;
-      border: 1px solid #d6e3ed;
+      color: var(--x-muted);
+      background: var(--x-panel);
+      border: 1px solid var(--x-border);
       border-radius: 12px;
       font-size: 14px;
       line-height: 1.6;
@@ -371,8 +399,8 @@
       width: 1em;
       height: 1em;
       margin-right: 0.55em;
-      border: 2px solid #d6e3ed;
-      border-top-color: #3ea8ff;
+      border: 2px solid var(--x-border);
+      border-top-color: var(--x-link);
       border-radius: 50%;
       vertical-align: -0.12em;
       content: "";
@@ -380,9 +408,9 @@
     }
 
     .x-static-error {
-      color: #9a6700;
-      background: #fff8c5;
-      border-color: #e6d477;
+      color: var(--x-warning-text);
+      background: var(--x-warning-bg);
+      border-color: var(--x-warning-border);
     }
 
     @keyframes x-static-spin {
@@ -401,11 +429,6 @@
     }
 
     @media screen and (max-width: 767px) {
-      .x-static-embed-host {
-        width: 100%;
-        max-width: 100%;
-      }
-
       .x-static-section {
         padding: 14px;
       }
