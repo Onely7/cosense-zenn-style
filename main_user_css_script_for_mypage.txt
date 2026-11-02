@@ -139,7 +139,7 @@ code:style.css
    --zs-panel-bg: rgba(43, 47, 56, 0.9);
  }
  
- /* 黒い画像アイコン（見出し・emoji・ダウンロード）を白くし、標準のアイコンと同じくらいの明るさにする */
+ /* 黒い画像アイコン（emoji・ダウンロード）を白くし、標準のアイコンと同じくらいの明るさにする */
  :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .page-column > .page-menu .page-menu-extension img.extension-btn {
    opacity: 0.3;
    filter: invert(1);
@@ -962,7 +962,7 @@ code:style.css
  }
  
  /*
-  * ページメニューへ UserScript で追加した画像アイコン（見出し・emoji・ダウンロード）。
+  * ページメニューへ UserScript で追加した画像アイコン（emoji・ダウンロード）。
   * PC では標準のアイコンと同じ灰色に、スマホの暗いメニューバーでは白にする。
   */
  .page-column > .page-menu .page-menu-extension img.extension-btn {
@@ -974,7 +974,7 @@ code:style.css
    filter: invert(1);
  }
  
- /* メニューの幅は項目に合わせ、見出しメニューなどの長い項目だけを画面幅に収まるように折り返す */
+ /* メニューの幅は項目に合わせ、長い項目だけを画面幅に収まるように折り返す */
  .page-menu-extension .dropdown-menu {
    width: max-content;
    max-width: min(360px, calc(100vw - 16px));
@@ -1612,16 +1612,15 @@ code:script.js
    scheduleRender(0)
  }
 
-[#* ページ内目次の自動生成]
+[#* 見出しの判定]
 	from: [/daiiz/ページの見出しを作るUserScript]
- `[*# 見出し]` のように `#` を含む太字だけの行を見出しとして、`*` の数に応じた階層付きで一覧にする
+ `[*# 見出し]` のように `#` を含む太字だけの行を見出しとし、`*` の数に応じて階層を付ける（目次と見出しリンクのコピーで使う）
  `#` を含む見出しがないページでは、`[** 見出し]` のように太字だけの行を使う
- スマホ幅（767px 以下）では、ヘッダーのボタンから目次を開けるため、ページメニューには見出しメニューを追加しない（狭い画面では Cosense がページメニューの拡張ボタンを一部しか表示しないため、ほかのボタンを優先する）
 code:script.js
  /*
   * ページ内の見出しを集める。
   * level は * の数、depth は最上位の見出しを 0 とした階層の深さ。
-  * 追従する目次や見出しリンクのコピーでも使う。
+  * 目次と見出しリンクのコピーで使う。
   */
  function getHeadings () {
    const candidates = []
@@ -1629,16 +1628,13 @@ code:script.js
      if (line.title || !line.nodes) continue
      const node = getHeadingNode(line.nodes)
      if (!node) continue
-     const image = getIconUrl(node.children)
      const text = renderPlainText(node.children, {noIcon: true}).trim()
      const textWithIcons = renderPlainText(node.children, {noIcon: false}).trim()
      candidates.push({
        id: line.id,
        level: node.type === 'strong' ? 1 : node.unit.strong,
        hasHash: node.type === 'deco' && node.unit.deco.includes('#'),
-       text: text || textWithIcons,
-       label: image ? text : textWithIcons,
-       image
+       text: text || textWithIcons
      })
    }
    const headings = candidates.some(heading => heading.hasHash)
@@ -1675,22 +1671,6 @@ code:script.js
    return renderPlainText(node.children, options)
  }
  
- function getIconUrl (node) {
-   if (node == null || typeof node === 'string') return null
-   if (Array.isArray(node)) {
-     for (const child of node) {
-       const url = getIconUrl(child)
-       if (url) return url
-     }
-     return null
-   }
-   if (node.type === 'icon' || node.type === 'strong-icon') {
-     const project = node.unit.project || scrapbox.Project.name
-     return `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(node.unit.page)}/icon`
-   }
-   return getIconUrl(node.children)
- }
- 
  // 行リンク（#行ID）で移動する。すでに同じ行リンクを開いているときは、その行までスクロールする
  function jumpToLine (id) {
    if (location.hash !== `#${id}`) {
@@ -1699,37 +1679,6 @@ code:script.js
    }
    const line = document.getElementById(`L${id}`)
    if (line) window.scrollTo({top: line.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth'})
- }
- 
- // 画面幅が 768px 以上になったときに、見出しメニューを追加する（追加したメニューは消せないため、一度だけ）
- {
-   const wideScreen = matchMedia('(min-width: 768px)')
-   const addHeadingMenu = () => {
-     if (!wideScreen.matches) return
-     wideScreen.removeEventListener('change', addHeadingMenu)
-     scrapbox.PageMenu.addMenu({
-       title: '見出し',
-       image: 'https://gyazo.com/da0408108eda84e56a587630be5e4524/raw',
-       onClick: () => {
-         const menu = scrapbox.PageMenu('見出し')
-         menu.removeAllItems()
-         const headings = getHeadings()
-         if (headings.length === 0) {
-           menu.addItem({title: '見出しはありません', onClick: () => {}})
-           return
-         }
-         for (const heading of headings) {
-           menu.addItem({
-             title: '　'.repeat(heading.depth) + heading.label,
-             image: heading.image ?? undefined,
-             onClick: () => jumpToLine(heading.id)
-           })
-         }
-       }
-     })
-   }
-   wideScreen.addEventListener('change', addHeadingMenu)
-   addHeadingMenu()
  }
 
 [#* 追従する目次]
