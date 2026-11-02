@@ -75,7 +75,10 @@ code:style.css
    --zs-navbar-bg: rgba(255, 255, 255, 0.72); /* すりガラス風の半透明の背景 */
    --zs-navbar-icon: var(--zs-icon-muted); /* ライト／ダークモードの切り替えボタンと目次ボタン（検索アイコンと同じ色） */
    --zs-navbar-hover-bg: rgba(31, 31, 31, 0.08);
-   --zs-panel-bg: rgba(255, 255, 255, 0.88); /* スマホで開く目次の背景 */
+   --zs-panel-bg: rgba(255, 255, 255, 0.88); /* ヘッダーのボタンで開く目次の背景 */
+ 
+   /* ファイルを読み込めなかったときなどのメッセージ */
+   --zs-error: #d1242f;
  
    /* 埋め込みカードの大きさ（Tampermonkey 版のカードにも使う） */
    --zs-x-embed-width: 550px; /* X ポストのカードの幅（本文の幅より広くはならない） */
@@ -137,6 +140,8 @@ code:style.css
    --zs-navbar-icon: rgba(255, 255, 255, 0.87);
    --zs-navbar-hover-bg: rgba(255, 255, 255, 0.12);
    --zs-panel-bg: rgba(43, 47, 56, 0.9);
+ 
+   --zs-error: #ff7b72;
  }
  
  /* 黒い画像アイコン（emoji・ダウンロード）を白くし、標準のアイコンと同じくらいの明るさにする */
@@ -986,7 +991,7 @@ code:style.css
  }
 
 [*# UserScript で追加する部品]
- ライト／ダークモードの切り替えボタン・絵文字の候補・目次（スマホではヘッダーのボタンから開く）・見出しリンクのコピーボタンの見た目
+ ライト／ダークモードの切り替えボタン・絵文字の候補・目次（タブレットやスマホではヘッダーのボタンから開く）・見出しリンクのコピーボタン・新規ページの書き始め方のパネルの見た目
 code:style.css
  /* ヘッダーのライト／ダークモードの切り替えボタン（自分のアイコンの左隣） */
  .navbar .navbar-menu > li.zs-theme-toggle-item {
@@ -1438,6 +1443,171 @@ code:style.css
    .zs-heading-link {
      display: none !important;
    }
+ } 
+ /*
+  * 空の新規ページに表示する、書き始め方のパネル。
+  * パネルの幅が 560px 以上なら 3 つの選択肢を横に並べ、狭いときはアイコンを左に置いて縦に並べる。
+  */
+ .zs-start {
+   container-type: inline-size;
+   box-sizing: border-box;
+   margin: 4px 0 8px;
+   padding: 0 var(--zs-start-padding, 0px);
+   color: var(--zs-text);
+   font-size: 14px;
+   line-height: 1.6;
+   letter-spacing: normal;
+   white-space: normal;
+ }
+ 
+ .zs-start-heading {
+   margin: 0 0 10px;
+   color: var(--zs-text-muted);
+   font-size: 13px;
+   font-weight: 700;
+ }
+ 
+ .zs-start-options {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr);
+   gap: 10px;
+ }
+ 
+ .zs-start-option {
+   display: grid;
+   grid-template-columns: 24px minmax(0, 1fr);
+   align-items: start;
+   gap: 6px 12px;
+   box-sizing: border-box;
+   min-width: 0;
+   margin: 0;
+   padding: 14px 16px;
+   color: inherit;
+   font: inherit;
+   text-align: left;
+   background-color: var(--zs-surface);
+   border: 1px solid var(--zs-border);
+   border-radius: 10px;
+   transition: border-color 0.15s ease, background-color 0.15s ease;
+ }
+ 
+ button.zs-start-option {
+   cursor: pointer;
+ }
+ 
+ button.zs-start-option:hover,
+ button.zs-start-option:focus-visible {
+   border-color: var(--zs-accent);
+ }
+ 
+ .zs-start-option:focus-visible,
+ .zs-start-choices button:focus-visible {
+   outline: 2px solid var(--zs-accent);
+   outline-offset: 1px;
+ }
+ 
+ .zs-start-option svg {
+   flex: none;
+   width: 24px;
+   height: 24px;
+   fill: var(--zs-accent);
+ }
+ 
+ .zs-start-text,
+ .zs-start-choices {
+   grid-column: 2;
+ }
+ 
+ @container (min-width: 560px) {
+   .zs-start-options {
+     grid-template-columns: repeat(3, minmax(0, 1fr));
+     gap: 12px;
+   }
+ 
+   .zs-start-option {
+     display: flex;
+     flex-direction: column;
+     align-items: flex-start;
+   }
+ }
+ 
+ .zs-start-text {
+   display: flex;
+   flex-direction: column;
+   gap: 2px;
+   min-width: 0;
+ }
+ 
+ .zs-start-label {
+   color: var(--zs-text);
+   font-weight: 700;
+ }
+ 
+ .zs-start-note,
+ .zs-start-hint {
+   color: var(--zs-text-muted);
+   font-size: 12px;
+   line-height: 1.5;
+ }
+ 
+ .zs-start-choices {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 6px;
+   margin-top: 4px;
+ }
+ 
+ .zs-start-choices button {
+   max-width: 100%;
+   margin: 0;
+   padding: 4px 12px;
+   overflow: hidden;
+   color: var(--zs-accent-strong);
+   font: inherit;
+   font-size: 13px;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   background-color: var(--zs-surface-muted);
+   border: 1px solid var(--zs-border);
+   border-radius: 999px;
+   cursor: pointer;
+ }
+ 
+ .zs-start-choices button:hover {
+   border-color: var(--zs-accent);
+ }
+ 
+ /* ファイルを読み込む枠（ファイルをドラッグしている間は強調する） */
+ .zs-start-drop {
+   border-style: dashed;
+ }
+ 
+ .zs-start.is-dragover .zs-start-drop {
+   background-color: var(--zs-subheading-bg);
+   border-color: var(--zs-accent);
+ }
+ 
+ .zs-start.is-busy .zs-start-options {
+   opacity: 0.6;
+   pointer-events: none;
+ }
+ 
+ .zs-start-status {
+   margin: 10px 0 0;
+   color: var(--zs-text-muted);
+   font-size: 13px;
+ }
+ 
+ .zs-start-status:empty {
+   display: none;
+ }
+ 
+ .zs-start-status.is-error {
+   color: var(--zs-error);
+ }
+ 
+ .zs-start-file {
+   display: none !important;
  }
 
 
@@ -2897,6 +3067,731 @@ code:script.js
      title: 'Markdown 形式 (.md)',
      onClick: () => download('md')
    })
+ }
+
+[#* 新規ページの書き始め]
+ 空の新規ページでは、タイトルの下に「空のページから書く」「テンプレートから作る」「ファイルから読み込む」を表示する
+ テンプレートには、タイトルの末尾が「テンプレート」または「template」のページを使う。タイトルを入力してからテンプレートを選ぶと、その本文をこのページに入れる
+ Cosense 形式 (.txt) と Markdown 形式 (.md) のファイルは、ボタンで選ぶか、ページにドラッグ＆ドロップして読み込む
+ ファイルを読み込むときにタイトルが空なら、ファイルの 1 行目（Markdown では front matter の title か最初の # 見出し、どちらもなければファイル名）をタイトルにする。同じタイトルのページがすでにあるときは読み込まない
+ タイトルが空のまま本文を入れると Cosense が本文の 1 行目をタイトルにするため、本文より先にタイトルを決める
+ ページの書き換えには、Cosense の UserScript 用の API（scrapbox.Page.insertLine / updateLine）を使う
+code:script.js
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   // テンプレートとして一覧に出すページ（タイトルの末尾が「テンプレート」または「template」のページ）
+   const TEMPLATE_TITLE = /(?:テンプレート|template)$/i
+   const MAX_FILE_SIZE = 2 * 1024 * 1024 // 読み込むファイルの大きさの上限（2 MiB）
+   const MAX_LINE_LENGTH = 10000 // scrapbox.Page.insertLine で 1 行に入れられる文字数の上限
+   // Material Symbols（Apache License 2.0）の edit_note / description / upload_file アイコン
+   const ICONS = {
+     blank: 'M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z',
+     template: 'M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z',
+     file: 'M440-200h80v-167l64 64 56-57-160-160-160 160 57 56 63-63v167ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z'
+   }
+   const projectName = scrapbox.Project.name
+ 
+   // ---- Markdown を Cosense の記法にする ----
+ 
+   // Cosense のページの URL なら、プロジェクト名とタイトルを返す
+   const cosensePage = url => {
+     const match = /^https:\/\/scrapbox\.io\/([^/?#]+)\/([^/?#]+)\/?$/.exec(url)
+     if (!match) return null
+     try {
+       return {project: decodeURIComponent(match[1]), title: decodeURIComponent(match[2]).replace(/_/g, ' ')}
+     } catch {
+       return null
+     }
+   }
+ 
+   // リンクの文字列やタイトルから、Markdown の記号（リンク・強調・コードなど）を取り除く
+   const plainText = value => value
+     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+     .replace(/<[^>]+>/g, '')
+     .replace(/(\*{1,3}|~~|`+)(\S[\s\S]*?)\1/g, '$2')
+     .replace(/\\([!-/:-@[-`{-~])/g, '$1')
+     .trim()
+ 
+   const convertLink = (label, url) => {
+     const text = plainText(label)
+     const page = cosensePage(url)
+     if (page) {
+       // このプロジェクトのページへのリンクは、ページリンクやハッシュタグにする
+       if (page.project === projectName && [page.title, page.title.replace(/ /g, '_')].includes(text)) return `[${page.title}]`
+       if (page.project === projectName && text === `#${page.title}` && !/\s/.test(page.title)) return `#${page.title}`
+       if (text === `/${page.project}/${page.title}`) return `[/${page.project}/${page.title}]`
+     }
+     if (!text || text === url) return url
+     return `[${text} ${url}]`
+   }
+ 
+   // 1 行分の Markdown の記法（強調・リンク・コードなど）を Cosense の記法にする
+   const convertInline = (source, definitions) => {
+     const slots = []
+     const hold = text => `\u0000${slots.push(text) - 1}\u0000`
+     const resolve = text => {
+       let result = text
+       while (/\u0000\d+\u0000/.test(result)) result = result.replace(/\u0000(\d+)\u0000/g, (_, index) => slots[index])
+       return result
+     }
+     let text = source
+ 
+     // インラインコード。中のバッククオートは、Cosense と同じように \` と書く
+     text = text.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_, fence, code) => {
+       const body = /^ [\s\S]* $/.test(code) && code.trim() ? code.slice(1, -1) : code
+       return hold('`' + body.replace(/`/g, '\\`') + '`')
+     })
+     // バックスラッシュでエスケープした記号は、そのままの文字にする
+     text = text.replace(/\\([!-/:-@[-`{-~])/g, (_, char) => hold(char))
+     // 数式 $...$
+     text = text.replace(/(^|[^$])\$(?![\s$])([^$\n]*?[^\s$])\$(?![\d$])/g, (_, before, formula) => before + hold(`[$ ${formula}]`))
+     // HTML のコメント・画像・リンク・そのほかのタグ
+     text = text.replace(/<!--[\s\S]*?-->/g, '')
+     text = text.replace(/<img\s[^>]*?src=["']([^"']+)["'][^>]*>/gi, (_, src) => hold(`[${src}]`))
+     text = text.replace(/<a\s[^>]*?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, label) => hold(convertLink(label.replace(/<[^>]+>/g, ''), href)))
+     text = text.replace(/<\/?(?:span|kbd|sup|sub|u|ins|mark|small|big|font|abbr|cite|div|p|center|details|summary)\b[^>]*>/gi, '')
+     // リンク付きの画像・画像・リンク
+     text = text.replace(/\[!\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, src, href) => hold(`[${href} ${src}]`))
+     text = text.replace(/!\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, src) => hold(`[${src.replace(/^(https:\/\/gyazo\.com\/[0-9a-f]{32})\/raw$/i, '$1')}]`))
+     text = text.replace(/\[([^\]]+)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, label, url) => hold(convertLink(label, url)))
+     // 参照形式のリンク [文字][名前]・[名前][]・[名前]
+     text = text.replace(/\[([^\]]+)\]\[([^\]]*)\]/g, (match, label, name) => {
+       const url = definitions.get((name || label).toLowerCase())
+       return url ? hold(convertLink(label, url)) : match
+     })
+     text = text.replace(/\[([^\]^][^\]]*)\](?![(:[])/g, (match, label) => {
+       const url = definitions.get(label.toLowerCase())
+       return url ? hold(convertLink(label, url)) : match
+     })
+     // <https://...> の形の URL
+     text = text.replace(/<(https?:\/\/[^>\s]+)>/g, (_, url) => hold(url))
+ 
+     // 強調・斜体・打ち消し線（内側の装飾も先に変換する）
+     const emphasis = value => value
+       .replace(/(\*\*\*|___)(?=\S)([\s\S]*?\S)\1/g, (_, mark, body) => hold(`[*/ ${emphasis(body)}]`))
+       .replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, (_, mark, body) => hold(`[* ${emphasis(body)}]`))
+       .replace(/~~(?=\S)([\s\S]*?\S)~~/g, (_, body) => hold(`[- ${emphasis(body)}]`))
+       .replace(/(^|[^\w*\\])\*(?=[^\s*])([^*]*?[^\s*\\])\*(?![\w*])/g, (_, before, body) => before + hold(`[/ ${emphasis(body)}]`))
+       .replace(/(^|[^\p{L}\p{N}_\\])_(?=[^\s_])([^_]*?[^\s_\\])_(?![\p{L}\p{N}_])/gu, (_, before, body) => before + hold(`[/ ${emphasis(body)}]`))
+     text = emphasis(text)
+     // 文字参照（&amp; など）は元の文字に戻す
+     text = text.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_, name) => ({amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' '})[name])
+ 
+     return resolve(text)
+   }
+ 
+   const indentWidth = text => {
+     let width = 0
+     for (const char of text) {
+       if (char === ' ') width += 1
+       else if (char === '\t') width += 4 - (width % 4)
+       else break
+     }
+     return width
+   }
+ 
+   // 先頭から width 文字分のインデントを取り除く（タブは 4 文字分と数える）
+   const dedent = (text, width) => {
+     let column = 0
+     let index = 0
+     while (index < text.length && column < width) {
+       if (text[index] === ' ') column += 1
+       else if (text[index] === '\t') column += 4 - (column % 4)
+       else break
+       index += 1
+     }
+     return text.slice(index)
+   }
+ 
+   const FENCE = /^(\s*)(`{3,}|~{3,})\s*([^`\s]*)(.*)$/
+   const LIST_ITEM = /^(\s*)([-*+]|\d{1,9}[.)])(?:[ \t]+(.*)|$)/
+   const TABLE_DELIMITER = /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/
+   const HR = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/
+ 
+   // コードブロックの名前（Zenn の「言語:ファイル名」の形にも対応する）
+   const codeName = info => {
+     if (!info) return 'text'
+     const separator = info.indexOf(':')
+     if (separator >= 0 && separator < info.length - 1) return info.slice(separator + 1)
+     return info.replace(/:$/, '')
+   }
+ 
+   // 表の 1 行を、セルごとに分ける（コードの中とエスケープした | では分けない）
+   const splitRow = row => {
+     const cells = []
+     let cell = ''
+     let inCode = false
+     const body = row.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '')
+     for (let index = 0; index < body.length; index += 1) {
+       const char = body[index]
+       if (char === '\\' && body[index + 1] === '|') {
+         cell += '|'
+         index += 1
+       } else if (char === '`') {
+         inCode = !inCode
+         cell += char
+       } else if (char === '|' && !inCode) {
+         cells.push(cell)
+         cell = ''
+       } else {
+         cell += char
+       }
+     }
+     cells.push(cell)
+     return cells.map(value => value.trim())
+   }
+ 
+   // Markdown の文書を、Cosense のタイトルと本文の行にする
+   const markdownToCosense = (markdown, fallbackTitle = '') => {
+     let text = markdown.replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+     let title = ''
+ 
+     // Zenn などの front matter（先頭の --- で囲んだ部分）は、title だけを使う
+     const front = /^---\n([\s\S]*?)\n(?:---|\.\.\.)[ \t]*(?:\n|$)/.exec(text)
+     if (front) {
+       const match = /^title:[ \t]*(.*)$/m.exec(front[1])
+       if (match) title = match[1].trim().replace(/^(["'])(.*)\1$/, '$2')
+       text = text.slice(front[0].length)
+     }
+ 
+     // 参照形式のリンクの定義（[名前]: URL）を集めて、本文から取り除く
+     const definitions = new Map()
+     const source = text.split('\n').filter(line => {
+       const match = /^ {0,3}\[([^\]^][^\]]*)\]:\s*<?(\S+?)>?(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*$/.exec(line)
+       if (!match) return true
+       definitions.set(match[1].toLowerCase(), match[2])
+       return false
+     })
+     const inline = value => convertInline(value, definitions)
+ 
+     const out = []
+     const kinds = [] // out の各行の種類（あとで空行を整理するときに使う）
+     const emit = (line, kind) => {
+       out.push(line)
+       kinds.push(kind)
+     }
+     let list = [] // 箇条書きの各階層の {marker: 記号の位置, content: 本文の位置}
+     const depth = () => list.length
+ 
+     // 表の直前にある、太字だけの行（**名前**）は表の名前にする
+     const takeTableName = () => {
+       let index = out.length - 1
+       if (index >= 0 && out[index] === '') index -= 1
+       const match = index >= 0 && kinds[index] === 'text' && /^\[\* ([^\]]+)\]$/.exec(out[index])
+       if (!match) return 'table'
+       out.splice(index)
+       kinds.splice(index)
+       return match[1]
+     }
+ 
+     for (let index = 0; index < source.length; index += 1) {
+       const raw = source[index]
+       const line = raw.replace(/[ \t]+$/, '')
+ 
+       // 空行
+       if (line.trim() === '') {
+         emit('', 'blank')
+         continue
+       }
+ 
+       const width = indentWidth(line)
+       const listItem = LIST_ITEM.exec(line)
+       const top = list[list.length - 1]
+ 
+       // 箇条書きの続きでなくなったら、箇条書きを終える
+       if (top && !listItem && width < top.content) {
+         const previous = out[out.length - 1]
+         const lazy = previous !== '' && kinds[kinds.length - 1] === 'list' && !FENCE.test(line) && !/^ {0,3}(?:#{1,6}\s|>)/.test(line)
+         if (!lazy) list = []
+       }
+ 
+       // コードブロック
+       const fence = FENCE.exec(line)
+       if (fence) {
+         const [, , mark, info] = fence
+         const codeLines = []
+         let end = index + 1
+         while (end < source.length) {
+           const close = new RegExp(`^\\s*${mark[0] === '`' ? '`' : '~'}{${mark.length},}\\s*$`).exec(source[end])
+           if (close) break
+           codeLines.push(source[end])
+           end += 1
+         }
+         index = end
+         // 箇条書きの中のコードブロックは、項目の 1 段下に置く
+         const indent = list.length ? depth() + 1 : 0
+         // コマンドラインだけのコードブロックは、Cosense のコマンドラインの記法（$ や % で始まる行）にする
+         const commands = codeLines.map(code => dedent(code, width)).filter(code => code.trim())
+         if (!list.length && /^(?:console|shell-session|sh-session)$/.test(info) && commands.length && commands.every(code => /^[$%] \S/.test(code))) {
+           for (const command of commands) emit(command, 'text')
+           continue
+         }
+         emit(`${' '.repeat(indent)}code:${codeName(info)}`, 'code')
+         for (const code of codeLines) emit(`${' '.repeat(indent + 1)}${dedent(code, width)}`, 'code')
+         continue
+       }
+ 
+       // 数式のブロック $$ ... $$
+       if (/^\s*\$\$/.test(line)) {
+         const single = /^\s*\$\$(.+)\$\$\s*$/.exec(line)
+         let formula = single ? single[1] : line.replace(/^\s*\$\$/, '')
+         if (!single) {
+           let end = index + 1
+           while (end < source.length && !/\$\$\s*$/.test(source[end])) {
+             formula += ` ${source[end].trim()}`
+             end += 1
+           }
+           if (end < source.length) formula += ` ${source[end].replace(/\$\$\s*$/, '').trim()}`
+           index = end
+         }
+         emit(`${' '.repeat(depth())}[$ ${formula.trim()}]`, 'text')
+         continue
+       }
+ 
+       // Zenn の :::message / :::details は引用にする
+       const container = /^:::+\s*(message|details)?\s*(.*)$/.exec(line.trim())
+       if (container && /^:::/.test(line.trim())) {
+         if (container[1] === 'details' && container[2]) emit(`> [* ${inline(container[2])}]`, 'quote')
+         let end = index + 1
+         while (end < source.length && !/^\s*:::+\s*$/.test(source[end])) {
+           const content = source[end].trim()
+           if (content) emit(`> ${inline(content)}`, 'quote')
+           end += 1
+         }
+         index = end
+         continue
+       }
+ 
+       // 見出し（# の数で文字の大きさを変える。最初の # 見出しはタイトルにする）
+       const heading = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/.exec(line)
+       const underline = !heading && index + 1 < source.length ? /^ {0,3}(=+|-+)[ \t]*$/.exec(source[index + 1]) : null
+       const setext = underline && !listItem && !/^\s*>/.test(line) && !HR.test(line) && width < 4 && !line.includes('|') ? underline : null
+       if (heading || setext) {
+         const level = heading ? heading[1].length : setext[1][0] === '=' ? 1 : 2
+         const content = (heading ? heading[2] ?? '' : line.trim()).trim()
+         if (setext) index += 1
+         const hasContent = out.some(value => value !== '')
+         if (level === 1 && !title && !hasContent) {
+           title = plainText(content)
+           continue
+         }
+         const stars = level === 1 ? 4 : level === 2 ? 3 : level === 3 ? 2 : 1
+         const body = inline(content).replace(/^\[\*+ ([\s\S]*)\]$/, '$1')
+         list = []
+         emit(`[${'*'.repeat(stars)}# ${body}]`, 'heading')
+         continue
+       }
+ 
+       // 区切り線
+       if (HR.test(line)) {
+         list = []
+         emit('[/icons/hr.icon]', 'text')
+         continue
+       }
+ 
+       // 表
+       if (line.includes('|') && index + 1 < source.length && TABLE_DELIMITER.test(source[index + 1]) && source[index + 1].includes('-')) {
+         const name = takeTableName()
+         list = []
+         emit(`table:${name}`, 'table')
+         const rows = [line]
+         let end = index + 2
+         while (end < source.length && source[end].trim() && source[end].includes('|')) {
+           rows.push(source[end])
+           end += 1
+         }
+         index = end - 1
+         for (const row of rows) {
+           const cells = splitRow(row).map(cell => inline(cell).replace(/\t/g, ' '))
+           while (cells.length > 1 && cells[cells.length - 1] === '') cells.pop()
+           emit(` ${cells.join('\t')}`, 'table')
+         }
+         continue
+       }
+ 
+       // 箇条書き（- * + と番号付き。インデントの深さで階層を決める）
+       if (listItem) {
+         const marker = listItem[2]
+         const content = listItem[3] ?? ''
+         const markerColumn = width
+         const contentColumn = markerColumn + marker.length + Math.max(1, Math.min(4, indentWidth(line.slice(line.indexOf(marker) + marker.length))))
+         while (list.length) {
+           const last = list[list.length - 1]
+           if (markerColumn >= last.content) break
+           list.pop()
+           if (markerColumn >= last.marker) break
+         }
+         list.push({marker: markerColumn, content: contentColumn})
+         const prefix = ' '.repeat(depth())
+         // 箇条書きの中のコードブロック（- ```js）
+         const innerFence = FENCE.exec(content)
+         if (innerFence) {
+           const [, , mark, info] = innerFence
+           emit(`${prefix}code:${codeName(info)}`, 'code')
+           let end = index + 1
+           while (end < source.length && !new RegExp(`^\\s*${mark[0] === '`' ? '`' : '~'}{${mark.length},}\\s*$`).test(source[end])) {
+             emit(`${prefix} ${dedent(source[end], contentColumn)}`, 'code')
+             end += 1
+           }
+           index = end
+           continue
+         }
+         const task = /^\[([ xX])\][ \t]+(.*)$/.exec(content)
+         if (task) emit(`${prefix}[${task[1] === ' ' ? '_' : 'x'}] ${inline(task[2])}`, 'list')
+         else if (/^\d/.test(marker)) emit(`${prefix}${marker.replace(')', '.')} ${inline(content)}`, 'list')
+         else emit(`${prefix}${inline(content)}`, 'list')
+         continue
+       }
+ 
+       // 引用
+       const quote = /^\s*>\s?(.*)$/.exec(line)
+       if (quote) {
+         const content = quote[1].replace(/^(?:>\s?)+/, '')
+         emit(`${' '.repeat(depth())}> ${inline(content)}`.replace(/> $/, '>'), 'quote')
+         continue
+       }
+ 
+       // インデントしたコードブロック（箇条書きの外で、4 文字以上インデントした行）
+       if (!list.length && width >= 4 && (out.length === 0 || out[out.length - 1] === '')) {
+         emit('code:text', 'code')
+         let end = index
+         while (end < source.length && (indentWidth(source[end]) >= 4 || !source[end].trim())) {
+           emit(` ${dedent(source[end], 4)}`, 'code')
+           end += 1
+         }
+         while (out[out.length - 1] === ' ') {
+           out.pop()
+           kinds.pop()
+         }
+         index = end - 1
+         continue
+       }
+ 
+       // ふつうの行。行末の改行の記号（空白 2 つ・\・<br>）は取り除く
+       const prefix = list.length ? ' '.repeat(depth()) : ''
+       const content = line.trim().replace(/\\$/, '')
+       for (const part of content.split(/<br\s*\/?>/i)) emit(prefix + inline(part.trim()), list.length ? 'list' : 'text')
+     }
+ 
+     // 空行を整える。2 つ以上続く空行・見出しの直後・箇条書きの項目の間の空行は取り除き、
+     // コードブロックや表のすぐ後にインデントした行が続くときは、ブロックに取り込まれないように空行を入れる
+     const lines = []
+     let previousKind = null
+     let blockIndent = -1 // 直前のコードブロック・表の「code:」「table:」の行のインデント
+     let pendingBlank = false
+     out.forEach((line, index) => {
+       const kind = kinds[index]
+       if (line === '') {
+         pendingBlank = lines.length > 0
+         return
+       }
+       const isBlock = kind === 'code' || kind === 'table'
+       const isHeader = isBlock && /^\s*(?:code|table):/.test(line)
+       if (pendingBlank) {
+         if (previousKind !== 'heading' && !(previousKind === 'list' && kind === 'list')) lines.push('')
+       } else if (blockIndent >= 0 && (!isBlock || isHeader) && indentWidth(line) > blockIndent) {
+         lines.push('')
+       }
+       if (isHeader) blockIndent = indentWidth(line)
+       else if (!isBlock) blockIndent = -1
+       lines.push(line)
+       previousKind = kind
+       pendingBlank = false
+     })
+     return {title: title || fallbackTitle, lines}
+   }
+ 
+   // ---- ページへの書き込み ----
+ 
+   const hasTitle = () => (scrapbox.Page.lines?.[0]?.text ?? '').trim() !== ''
+ 
+   // 同じタイトルのページがすでにあるか
+   const pageExists = async title => {
+     const response = await fetch(`/api/pages/${encodeURIComponent(projectName)}/${encodeURIComponent(title)}`, {credentials: 'same-origin'})
+     if (!response.ok) return false
+     return (await response.json()).persistent === true
+   }
+ 
+   // 本文の行を、タイトルの下に入れる。タイトルが空のときは、先に title をタイトルにする
+   // （タイトルが空のまま本文を入れると、Cosense が本文の 1 行目をタイトルにしてしまうため）
+   const writePage = async (title, body) => {
+     const lines = [...body]
+     while (lines.length && lines[lines.length - 1].trim() === '') lines.pop()
+     while (lines.length && lines[0].trim() === '') lines.shift()
+     if (lines.some(line => line.length > MAX_LINE_LENGTH) || (title ?? '').length > MAX_LINE_LENGTH) {
+       throw new Error(`${MAX_LINE_LENGTH} 文字を超える行があるため、読み込めません`)
+     }
+     const page = scrapbox.Page
+     if (!hasTitle()) {
+       if (!title) throw new Error('タイトルを入力してから選んでください')
+       if (await pageExists(title)) throw new Error(`「${title}」というページがすでにあります。タイトルを入力してから読み込んでください`)
+       page.updateLine(title, 0)
+     }
+     // 本文にある空行は上書きし、足りない分は行を足す
+     let row = 1
+     for (const [index, line] of lines.entries()) {
+       if (row < page.lines.length && page.lines[row].text.trim() === '') page.updateLine(line, row)
+       else page.insertLine(line, row)
+       row += 1
+       if (index % 100 === 99) {
+         setStatus(`読み込んでいます… ${index + 1} / ${lines.length} 行`)
+         await new Promise(resolve => requestAnimationFrame(resolve))
+       }
+     }
+     await page.waitForSave()
+   }
+ 
+   const readTemplate = async title => {
+     const response = await fetch(`/api/pages/${encodeURIComponent(projectName)}/${encodeURIComponent(title)}/text`, {credentials: 'same-origin'})
+     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+     return (await response.text()).split('\n').slice(1)
+   }
+ 
+   const readFile = async (file, format) => {
+     if (file.size > MAX_FILE_SIZE) throw new Error('ファイルが大きすぎます（2 MiB まで）')
+     const text = (await file.text()).replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+     const baseName = file.name.replace(/\.[^.]+$/, '')
+     if (format === 'md') {
+       const {title, lines} = markdownToCosense(text, baseName)
+       return {title, lines}
+     }
+     const [title = '', ...lines] = text.split('\n')
+     return {title: title.trim() || baseName, lines}
+   }
+ 
+   // ファイルの種類を拡張子から決める
+   const formatOf = file => {
+     if (/\.(?:md|markdown|mdown|mkd)$/i.test(file.name)) return 'md'
+     if (/\.txt$/i.test(file.name) || /^text\/plain$/.test(file.type)) return 'txt'
+     return null
+   }
+ 
+   // ---- 新規ページのパネル ----
+ 
+   const dismissed = new Set() // 「空のページから書く」を選んだページ
+   let templates = null
+   let waitingTitle = false // タイトルを入力するように案内している
+ 
+   const svg = path => `<svg viewBox="0 -960 960 960" aria-hidden="true"><path d="${path}"/></svg>`
+   const panel = document.createElement('section')
+   panel.className = 'zs-start'
+   panel.setAttribute('aria-label', 'ページの書き始め方')
+   panel.innerHTML = `
+     <p class="zs-start-heading">このページの書き始め方</p>
+     <div class="zs-start-options">
+       <button type="button" class="zs-start-option" data-action="blank">
+         ${svg(ICONS.blank)}
+         <span class="zs-start-text"><span class="zs-start-label">空のページから書く</span><span class="zs-start-note">タイトルを入力して、そのまま書き始めます</span></span>
+       </button>
+       <div class="zs-start-option">
+         ${svg(ICONS.template)}
+         <span class="zs-start-text"><span class="zs-start-label">テンプレートから作る</span><span class="zs-start-note">タイトルを入力してから選ぶと、テンプレートの本文がこのページに入ります</span></span>
+         <div class="zs-start-choices zs-start-templates"></div>
+       </div>
+       <div class="zs-start-option zs-start-drop">
+         ${svg(ICONS.file)}
+         <span class="zs-start-text"><span class="zs-start-label">ファイルから読み込む</span><span class="zs-start-note">ファイルをこのページにドラッグ＆ドロップするか、形式を選んでください</span></span>
+         <div class="zs-start-choices">
+           <button type="button" data-format="txt">Cosense 形式 (.txt)</button>
+           <button type="button" data-format="md">Markdown 形式 (.md)</button>
+         </div>
+       </div>
+     </div>
+     <p class="zs-start-status" role="status" aria-live="polite"></p>
+   `
+   const templateList = panel.querySelector('.zs-start-templates')
+   const status = panel.querySelector('.zs-start-status')
+   const fileInput = document.createElement('input')
+   fileInput.type = 'file'
+   fileInput.className = 'zs-start-file'
+   panel.append(fileInput)
+ 
+   const setStatus = (message, isError = false) => {
+     status.textContent = message
+     status.classList.toggle('is-error', isError)
+   }
+ 
+   const isEmptyPage = () =>
+     scrapbox.Layout === 'page' && (scrapbox.Page.lines ?? []).every((line, index) => index === 0 || line.text.trim() === '')
+ 
+   const isActive = () => panel.isConnected && !panel.hidden
+ 
+   let busy = false
+   const run = async (task, message) => {
+     if (busy) return
+     busy = true
+     panel.classList.add('is-busy')
+     setStatus(message)
+     try {
+       await task()
+       setStatus('')
+     } catch (error) {
+       setStatus(error instanceof Error ? error.message : String(error), true)
+       console.error('[Cosense Zenn Style]', error)
+     } finally {
+       busy = false
+       panel.classList.remove('is-busy')
+       update()
+     }
+   }
+ 
+   const importFile = (file, format = formatOf(file)) => {
+     if (!format) {
+       setStatus('読み込めるのは、Cosense 形式 (.txt) と Markdown 形式 (.md) のファイルです', true)
+       return
+     }
+     run(async () => {
+       const {title, lines} = await readFile(file, format)
+       await writePage(title, lines)
+     }, `${file.name} を読み込んでいます…`)
+   }
+ 
+   // タイトルの末尾が「テンプレート」などのページを探す
+   const loadTemplates = async () => {
+     const titles = []
+     let followingId = ''
+     do {
+       const query = followingId ? `?followingId=${encodeURIComponent(followingId)}` : ''
+       const response = await fetch(`/api/pages/${encodeURIComponent(projectName)}/search/titles${query}`, {credentials: 'same-origin'})
+       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+       for (const page of await response.json()) {
+         if (TEMPLATE_TITLE.test(page.title)) titles.push(page.title)
+       }
+       followingId = response.headers.get('X-Following-Id') ?? ''
+     } while (followingId)
+     return titles.sort((a, b) => a.localeCompare(b, 'ja'))
+   }
+ 
+   const renderTemplates = () => {
+     if (templates === null) {
+       templateList.innerHTML = '<span class="zs-start-hint">テンプレートを探しています…</span>'
+       return
+     }
+     if (templates.length === 0) {
+       templateList.innerHTML = '<span class="zs-start-hint">タイトルの末尾が「テンプレート」または「template」のページが、ここに表示されます</span>'
+       return
+     }
+     templateList.replaceChildren(...templates.map(title => {
+       const button = document.createElement('button')
+       button.type = 'button'
+       button.dataset.template = title
+       button.textContent = title
+       return button
+     }))
+   }
+ 
+   // 編集中のカーソルを動かさないように、パネルのボタンを押してもフォーカスを移さない
+   panel.addEventListener('mousedown', event => {
+     if (event.target.closest('button')) event.preventDefault()
+     event.stopPropagation()
+   })
+   panel.addEventListener('click', event => {
+     event.stopPropagation()
+     const button = event.target.closest('button')
+     if (!button || busy) return
+     if (button.dataset.action === 'blank') {
+       dismissed.add(scrapbox.Page.id)
+       update()
+       document.getElementById('text-input')?.focus()
+     } else if (button.dataset.template) {
+       const name = button.dataset.template
+       if (!hasTitle()) {
+         waitingTitle = true
+         setStatus('タイトルを入力してから、テンプレートを選んでください', true)
+         return
+       }
+       run(async () => writePage(null, await readTemplate(name)), `「${name}」を読み込んでいます…`)
+     } else if (button.dataset.format) {
+       fileInput.accept = button.dataset.format === 'md' ? '.md,.markdown,text/markdown' : '.txt,text/plain'
+       fileInput.dataset.format = button.dataset.format
+       fileInput.value = ''
+       fileInput.click()
+     }
+   })
+   fileInput.addEventListener('change', () => {
+     const [file] = fileInput.files
+     if (file) importFile(file, formatOf(file) ?? fileInput.dataset.format)
+   })
+ 
+   // ページへのドラッグ＆ドロップ。画像などは Cosense に任せ、テキストのファイルだけを読み込む
+   const isTextDrag = event => {
+     const items = [...(event.dataTransfer?.items ?? [])].filter(item => item.kind === 'file')
+     return items.length > 0 && items.every(item => !item.type || /^text\/(?:plain|markdown|x-markdown)$/.test(item.type))
+   }
+   let dragDepth = 0
+   const setDragging = dragging => panel.classList.toggle('is-dragover', dragging)
+   window.addEventListener('dragenter', event => {
+     if (!isActive() || !isTextDrag(event)) return
+     // Cosense の「Drop files to upload」の表示は出さず、このパネルの枠を強調する
+     event.preventDefault()
+     event.stopPropagation()
+     dragDepth += 1
+     setDragging(true)
+   }, true)
+   window.addEventListener('dragleave', event => {
+     if (dragDepth === 0) return
+     event.stopPropagation()
+     dragDepth -= 1
+     if (dragDepth === 0) setDragging(false)
+   }, true)
+   window.addEventListener('dragover', event => {
+     if (!isActive() || !isTextDrag(event)) return
+     event.preventDefault()
+     event.stopPropagation()
+     event.dataTransfer.dropEffect = 'copy'
+   }, true)
+   window.addEventListener('drop', event => {
+     dragDepth = 0
+     setDragging(false)
+     if (!isActive() || !isTextDrag(event)) return
+     event.preventDefault()
+     event.stopPropagation()
+     const [file] = event.dataTransfer.files
+     if (file) importFile(file)
+   }, true)
+ 
+   // 空の新規ページのときだけ、タイトルの下に表示する
+   const update = () => {
+     const show = isEmptyPage() && !dismissed.has(scrapbox.Page.id)
+     const page = document.querySelector('.page-wrapper .page')
+     if (!show || !page) {
+       if (!busy) panel.remove()
+       return
+     }
+     if (panel.parentElement !== page) {
+       waitingTitle = false
+       setStatus('')
+       page.append(panel)
+     }
+     // タイトルが入力されたら、タイトルの入力を求める案内を消す
+     if (waitingTitle && hasTitle()) {
+       waitingTitle = false
+       setStatus('')
+     }
+     if (templates === null) {
+       renderTemplates()
+       loadTemplates()
+         .then(titles => {
+           templates = titles
+         })
+         .catch(error => {
+           templates = []
+           console.error('[Cosense Zenn Style] テンプレートを探せませんでした', error)
+         })
+         .finally(renderTemplates)
+     }
+   }
+ 
+   let updateTimer = 0
+   const scheduleUpdate = (delay = 100) => {
+     clearTimeout(updateTimer)
+     updateTimer = setTimeout(update, delay)
+   }
+   scrapbox.on('lines:changed', () => scheduleUpdate())
+   scrapbox.on('page:changed', () => scheduleUpdate(0))
+   scrapbox.on('layout:changed', () => scheduleUpdate(0))
+   scheduleUpdate(0)
  }
 
 [#* ライト／ダークモードの切り替え]
