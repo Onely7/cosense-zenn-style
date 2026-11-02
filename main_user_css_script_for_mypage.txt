@@ -73,7 +73,7 @@ code:style.css
    /* ヘッダー */
    --zs-navbar-height: 48px; /* Cosense 標準は 40px */
    --zs-navbar-bg: rgba(255, 255, 255, 0.72); /* すりガラス風の半透明の背景 */
-   --zs-navbar-icon: #1f1f1f; /* ライト／ダークモードの切り替えボタンなど */
+   --zs-navbar-icon: var(--zs-icon-muted); /* ライト／ダークモードの切り替えボタンと目次ボタン（検索アイコンと同じ色） */
    --zs-navbar-hover-bg: rgba(31, 31, 31, 0.08);
    --zs-panel-bg: rgba(255, 255, 255, 0.88); /* スマホで開く目次の背景 */
  }
@@ -128,13 +128,14 @@ code:style.css
    --zs-caret-halo: rgba(0, 0, 0, 0.7);
  
    --zs-navbar-bg: rgba(32, 35, 42, 0.72);
-   --zs-navbar-icon: #e3e3e3;
+   --zs-navbar-icon: rgba(255, 255, 255, 0.87);
    --zs-navbar-hover-bg: rgba(255, 255, 255, 0.12);
    --zs-panel-bg: rgba(43, 47, 56, 0.9);
  }
  
- /* 黒い画像アイコン（見出し・emoji メニュー）を暗い背景でも見えるようにする */
- :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .page-menu .page-menu-extension img.extension-btn {
+ /* 黒い画像アイコン（見出し・emoji・ダウンロード）を白くし、標準のアイコンと同じくらいの明るさにする */
+ :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .page-column > .page-menu .page-menu-extension img.extension-btn {
+   opacity: 0.3;
    filter: invert(1);
  }
 
@@ -945,15 +946,15 @@ code:style.css
  }
  
  /*
-  * ページメニューへ UserScript で追加した画像アイコン（見出し・emoji）。
+  * ページメニューへ UserScript で追加した画像アイコン（見出し・emoji・ダウンロード）。
   * PC では標準のアイコンと同じ灰色に、スマホの暗いメニューバーでは白にする。
   */
- .page-menu .page-menu-extension img.extension-btn {
-   opacity: 0.55;
+ .page-column > .page-menu .page-menu-extension img.extension-btn {
+   opacity: 0.45;
  }
  
  .expandable-menu .page-menu .page-menu-extension img.extension-btn {
-   opacity: 0.9;
+   opacity: 1;
    filter: invert(1);
  }
  
@@ -998,8 +999,8 @@ code:style.css
    outline-offset: 1px;
  }
  .zs-theme-toggle svg {
-   width: 24px;
-   height: 24px;
+   width: 22px;
+   height: 22px;
    fill: currentColor;
  }
  
@@ -1215,8 +1216,8 @@ code:style.css
    }
  
    .zs-toc-toggle svg {
-     width: 24px;
-     height: 24px;
+     width: 22px;
+     height: 22px;
      fill: currentColor;
    }
  
@@ -2334,7 +2335,7 @@ code:script.js
  // ブロック内の変数は、ほかの機能の変数と衝突しない
  {
    // Material Symbols（Apache License 2.0）の download アイコン
-   const DOWNLOAD_ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path fill="#1f1f1f" d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>')}`
+   const DOWNLOAD_ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path fill="#000" d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>')}`
  
    const DECO = /^\[([!"#%&'()*+,\-./{|}<>_~]+) ((?:\[[^[\]]+\]|[^\]])+)\]/
    const BRACKET = /^\[([^[\]]+)\]/
@@ -2913,10 +2914,10 @@ code:script.js
 code:script.js
  // ブロック内の変数は、ほかの機能の変数と衝突しない
  {
-   // Material Symbols（Apache License 2.0）の light_mode / dark_mode アイコン
+   // Material Symbols（Apache License 2.0）の light_mode / dark_mode アイコン（ヘッダーのほかのアイコンと太さをそろえた、細めの weight 300）
    const ICONS = {
-     light: 'M565-395q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35Zm-226.5 56.5Q280-397 280-480t58.5-141.5Q397-680 480-680t141.5 58.5Q680-563 680-480t-58.5 141.5Q563-280 480-280t-141.5-58.5ZM200-440H40v-80h160v80Zm720 0H760v-80h160v80ZM440-760v-160h80v160h-80Zm0 720v-160h80v160h-80ZM256-650l-101-97 57-59 96 100-52 56Zm492 496-97-101 53-55 101 97-57 59Zm-98-550 97-101 59 57-100 96-56-52ZM154-212l101-97 55 53-97 101-59-57Zm326-268Z',
-     dark: 'M480-120q-150 0-255-105T120-480q0-150 105-255t255-105q14 0 27.5 1t26.5 3q-41 29-65.5 75.5T444-660q0 90 63 153t153 63q55 0 101-24.5t75-65.5q2 13 3 26.5t1 27.5q0 150-105 255T480-120Zm0-80q88 0 158-48.5T740-375q-20 5-40 8t-40 3q-123 0-209.5-86.5T364-660q0-20 3-40t8-40q-78 32-126.5 102T200-480q0 116 82 198t198 82Zm-10-270Z'
+     light: 'M565-395q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35Zm-212.46 42.46Q300-405.08 300-480q0-74.92 52.54-127.46Q405.08-660 480-660q74.92 0 127.46 52.54Q660-554.92 660-480q0 74.92-52.54 127.46Q554.92-300 480-300q-74.92 0-127.46-52.54ZM200-450H50v-60h150v60Zm710 0H760v-60h150v60ZM450-760v-150h60v150h-60Zm0 710v-150h60v150h-60ZM262.92-656.92l-93.69-90.46 42.39-44.39 90.23 92.69-38.93 42.16Zm485.46 488.69-90.84-93.31 39.54-41.54 93.69 90.46-42.39 44.39Zm-91.46-528.85 90.46-93.69 44.39 42.39-92.69 90.23-42.16-38.93ZM168.23-211.62l93.31-90.84 40.77 39.54-90.08 94.07-44-42.77ZM480-480Z',
+     dark: 'M481.15-140q-141.66 0-240.83-99.17-99.16-99.16-99.16-240.83 0-135.77 92.11-232.88 92.11-97.12 225.57-105.2 8.62 0 16.93.62 8.3.62 16.3 1.85-30.61 28.61-48.76 69.15-18.16 40.54-18.16 86.46 0 98.33 68.84 167.17Q562.82-424 661.15-424q46.54 0 86.77-18.15 40.23-18.16 68.46-48.77 1.23 8 1.85 16.31.61 8.3.61 16.92-7.69 133.46-104.8 225.57Q616.92-140 481.15-140Zm0-60q88 0 158-48.5t102-126.5q-20 5-40 8t-40 3q-123 0-209.5-86.5T365.15-660q0-20 3-40t8-40q-78 32-126.5 102t-48.5 158q0 116 82 198t198 82Zm-10-270Z'
    }
    const DARK_THEMES = ['default-dark', 'paper-dark-dark', 'hacker1', 'hacker2']
    const STORAGE_KEY = 'zs-color-mode' // 'light' か 'dark'。ないときはプロジェクトのテーマに従う
