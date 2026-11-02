@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cosense Zenn-style GitHub File Embed
 // @namespace    https://github.com/
-// @version      1.0.0
+// @version      1.1.0
 // @description  Embed standalone public GitHub text-file URLs in Cosense with a Zenn-like card.
 // @author       Onely7
 // @homepageURL  https://github.com/Onely7/cosense-zenn-style
@@ -32,19 +32,55 @@
   }
 
   GM_addStyle(`
-    .github-file-embed {
-      --github-embed-border: #d6e3ed;
+    /*
+     * カードの配色。Cosense のダーク系テーマでは暗い配色にする。
+     * Cosense Zenn Style の UserCSS を使っているときは、その配色（--zs-*）に合わせる。
+     *
+     * カードの大きさは、UserCSS で次の CSS 変数を指定すると変えられる。
+     *   --zs-github-embed-width: カードの幅（初期値 100%）
+     *   --zs-github-embed-max-height: コードを表示する部分の最大の高さ（初期値 360px。超えた分はカード内でスクロールする）
+     */
+    .github-file-embed-host {
+      --github-embed-text: #24292f;
+      --github-embed-bg: #fff;
       --github-embed-header-bg: #f6f8fa;
+      --github-embed-row-hover-bg: #f6f8fa;
+      --github-embed-border: #d6e3ed;
+      --github-embed-gutter-border: #edf2f7;
       --github-embed-link: #0f83fd;
+      --github-embed-link-hover: #1283fd;
       --github-embed-muted: #65717b;
+      --github-embed-line-number: #8f9faa;
+      --github-embed-heading: #0550ae;
+      --github-embed-warning-text: #9a6700;
+      --github-embed-warning-bg: #fff8c5;
+    }
+
+    :root:is([data-project-theme="default-dark"], [data-project-theme="paper-dark-dark"], [data-project-theme="hacker1"], [data-project-theme="hacker2"]) .github-file-embed-host {
+      --github-embed-text: var(--zs-text, #e6edf3);
+      --github-embed-bg: var(--zs-surface, #22272e);
+      --github-embed-header-bg: color-mix(in srgb, var(--github-embed-bg), #fff 5%);
+      --github-embed-row-hover-bg: color-mix(in srgb, var(--github-embed-bg), #fff 4%);
+      --github-embed-border: var(--zs-border, rgba(255, 255, 255, 0.16));
+      --github-embed-gutter-border: rgba(255, 255, 255, 0.08);
+      --github-embed-link: var(--zs-accent, #3ea8ff);
+      --github-embed-link-hover: #6cbcff;
+      --github-embed-muted: var(--zs-text-muted, rgba(255, 255, 255, 0.6));
+      --github-embed-line-number: rgba(255, 255, 255, 0.38);
+      --github-embed-heading: #79c0ff;
+      --github-embed-warning-text: #e3b341;
+      --github-embed-warning-bg: rgba(187, 128, 9, 0.15);
+    }
+
+    .github-file-embed {
       display: block;
       box-sizing: border-box;
       width: 100%;
       max-width: 100%;
       margin: 0.45em 0 0.7em;
       overflow: hidden;
-      color: #24292f;
-      background-color: #fff;
+      color: var(--github-embed-text);
+      background-color: var(--github-embed-bg);
       border: 1px solid var(--github-embed-border);
       border-radius: 8px;
       font-size: 14px;
@@ -81,7 +117,7 @@
     }
 
     .github-file-embed-title:hover {
-      color: #1283fd !important;
+      color: var(--github-embed-link-hover) !important;
       text-decoration: underline !important;
     }
 
@@ -93,9 +129,9 @@
 
     .github-file-embed-body {
       max-width: 100%;
-      max-height: 36rem;
+      max-height: var(--zs-github-embed-max-height, 360px);
       overflow: auto;
-      background-color: #fff;
+      background-color: var(--github-embed-bg);
     }
 
     .github-file-embed-row {
@@ -105,7 +141,7 @@
       min-height: 1.65em;
     }
 
-    .github-file-embed-row:hover { background-color: #f6f8fa; }
+    .github-file-embed-row:hover { background-color: var(--github-embed-row-hover-bg); }
 
     .github-file-embed-line-number {
       position: sticky;
@@ -113,17 +149,17 @@
       z-index: 1;
       box-sizing: border-box;
       padding: 0 0.75em 0 0.5em;
-      color: #8f9faa !important;
-      background-color: #fff;
-      border-right: 1px solid #edf2f7;
+      color: var(--github-embed-line-number) !important;
+      background-color: var(--github-embed-bg);
+      border-right: 1px solid var(--github-embed-gutter-border);
       text-align: right;
       text-decoration: none !important;
       user-select: none;
     }
 
     .github-file-embed-row:hover .github-file-embed-line-number {
-      color: #65717b !important;
-      background-color: #f6f8fa;
+      color: var(--github-embed-muted) !important;
+      background-color: var(--github-embed-row-hover-bg);
     }
 
     .github-file-embed-code {
@@ -131,7 +167,7 @@
       box-sizing: border-box;
       min-height: 1.65em;
       padding: 0 0.95em;
-      color: #24292f;
+      color: var(--github-embed-text);
       background-color: transparent;
       font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -141,7 +177,7 @@
     }
 
     .github-file-embed-code.is-markdown-heading {
-      color: #0550ae;
+      color: var(--github-embed-heading);
       font-weight: 600;
     }
 
@@ -155,8 +191,8 @@
     }
 
     .github-file-embed-error {
-      color: #9a6700;
-      background-color: #fff8c5;
+      color: var(--github-embed-warning-text);
+      background-color: var(--github-embed-warning-bg);
     }
 
     /*
@@ -166,7 +202,7 @@
     .github-file-embed-host {
       display: block;
       box-sizing: border-box;
-      width: 100%;
+      width: var(--zs-github-embed-width, 100%);
       min-width: 0;
       max-width: 100%;
     }
