@@ -6,7 +6,7 @@ Cosense Zenn Style is an unofficial collection of customizations inspired by the
 
 <img src="./images/image01.png" width=65%>
 
-It keeps the core Cosense editing experience intact while refining the appearance of headings, blockquotes, code, tables, and other elements. With the optional Tampermonkey scripts, you can also display GitHub files and X (Twitter) posts as embedded cards.
+It keeps the core Cosense editing experience intact while refining the appearance of headings, blockquotes, code, tables, and other elements. X (Twitter) posts are displayed as cards with UserScript alone, and the optional Tampermonkey scripts add GitHub file embeds and more detailed X cards.
 
 > [!CAUTION]
 > UserCSS, UserScript, and Tampermonkey userscripts are powerful features that can change how web pages look and behave.  
@@ -23,12 +23,15 @@ Paste `main_user_css_script_for_mypage.txt` into your My Page to customize the f
 - Blockquotes
 - Inline code and code blocks
 - Tables
-- Navigation bar
-- Visibility of the active line and text cursor
+- A frosted-glass header fixed to the top of the screen
+- A button that switches between light and dark mode
+- Visibility of the active line and a non-blinking text cursor
 - In-page heading menu (headings listed with their hierarchy)
-- A sticky table of contents next to the page on wide screens
+- A sticky table of contents next to the page on wide screens (opened from the menu button in the header on phones)
 - Copying links to headings
 - Emoji search and insertion
+- Downloading pages as Cosense text (`.txt`) or Markdown (`.md`)
+- Cards for X (Twitter) posts (author, text, and images)
 - Support for Cosense dark themes
 
 ### Optional features using Tampermonkey
@@ -36,7 +39,7 @@ Paste `main_user_css_script_for_mypage.txt` into your My Page to customize the f
 The following features are optional. You do not need [Tampermonkey](https://www.tampermonkey.net/) if you only want the basic customizations.
 
 - Embedding text files from public GitHub repositories
-- Displaying X (Twitter) posts as static cards
+- More detailed cards for X (Twitter) posts (post time, reply and like counts, and more)
 - Showing or hiding the parent post of a reply
 - Displaying quoted posts, images, video thumbnails, and related content
 
@@ -127,10 +130,17 @@ Add `#` to the bold notation, as in `[*# Heading]`, to display a line as a headi
 [*# Small heading]
 ```
 
+### Header and light/dark mode
+
+- The header stays at the top of the screen and has a frosted-glass look that lets the page show through faintly.
+- Use the button to the left of your icon to switch between light and dark mode. The button shows the icon of the mode it switches to (a moon or a sun).
+- Your choice is saved in the browser and used in every project. When you switch back to the brightness of the project theme, the saved choice is removed and the theme is followed again.
+
 ### Table of contents and heading links
 
 - Use **見出し** (Headings) in the page menu on the right to jump to a heading on the page. Headings containing `#` are listed with a hierarchy based on the number of `*` characters. On pages without such headings, lines that consist only of bold text, such as `[** Heading]`, are used instead.
-- On screens 1300px or wider, pages with two or more headings show a table of contents to the right of the page. The current heading is highlighted as you scroll.
+- On screens 1300px or wider, pages with two or more headings show a table of contents to the right of the page. The current heading is highlighted as you scroll. The table of contents takes up at most about 75% of the screen height and scrolls on its own when it is longer.
+- On screens 767px wide or narrower, the same table of contents opens from the menu button (☰) at the left end of the header. Choose a heading to jump to it, and tap outside the table of contents or press `Esc` to close it.
 - When you hover over a heading (or tap it on a phone), a button appears that copies a link to that heading (the page URL with the line ID).
 
 ### Emoji suggestions
@@ -142,6 +152,30 @@ Type `:` followed by a name at the start of a line or after a space or Japanese 
 - Suggestions do not appear for a `:` right after a letter or digit, such as `https:` in a URL or `12:30`.
 - Click **load emojis from /emoji** under **emoji** in the page menu to add the icons of the [/emoji](https://scrapbox.io/emoji) project. Icons whose images cannot be loaded are shown with the first letter of their names.
 
+### Downloading pages
+
+Use **ダウンロード** (Download) in the page menu, below the emoji button, to save the page you are viewing.
+
+- **Cosense 形式 (.txt)**: Saves the page text as it is.
+- **Markdown 形式 (.md)**: Converts the Cosense notation to Markdown in your browser, then saves it.
+
+The Markdown conversion mainly works as follows:
+
+| Cosense | Markdown |
+| --- | --- |
+| Title | `# Title` |
+| Headings (detected with the same rules as the table of contents) | `##` to `######` |
+| Indented lines and lines starting with `1. ` | Bulleted and numbered lists |
+| Lines starting with `[_]` / `[x]` | Task lists (`- [ ]` / `- [x]`) |
+| `[* bold]` `[/ italic]` `[- strikethrough]` `[! highlight]` | `**bold**` `*italic*` `~~strikethrough~~` `**highlight**` |
+| `code:file.ext` | ```` ```ext:file ```` (the same format as Zenn) |
+| `table:name` | A table (the first row becomes the header row) |
+| `[page]`, `#tag` | Links to pages in the project |
+| `[$ formula]` | `$formula$` |
+| Icons and images | Images |
+
+On narrow screens, Cosense may show only some of the extension buttons in the page menu. In that case, use the download buttons at the bottom of the table of contents that opens from the menu button (☰) in the header.
+
 ### Adjusting colors and width
 
 Edit the CSS custom properties in the `[*# 配色と寸法]` code block to change colors and the content width.
@@ -152,14 +186,15 @@ Edit the CSS custom properties in the `[*# 配色と寸法]` code block to chang
 | `--zs-toc-width` | Width of the sticky table of contents | `240px` |
 | `--zs-font-size` / `--zs-line-height` | Font size and line height of the text (`16px` / `28px` on screens 767px wide or narrower) | `18px` / `32px` |
 | `--zs-accent` | Accent color for checkboxes, the new page button, the table of contents, and more | `#3ea8ff` |
+| `--zs-navbar-height` | Height of the header (`40px` in standard Cosense) | `48px` |
 
-When the project theme is default-dark, paper-dark-dark, hacker1, or hacker2, the colors automatically switch to a palette for dark backgrounds. Cosense's own interface, such as the navigation bar and background, keeps the theme colors.
+When the project theme is default-dark, paper-dark-dark, hacker1, or hacker2 (including when you switch to dark mode with the header button), the colors automatically switch to a palette for dark backgrounds. Cosense's own interface, such as the background, keeps the theme colors.
 
 ## Embedding GitHub files
 
 <img src="./images/image02.png" width=65%>
 
-Cosense applies a Content Security Policy (CSP) that restricts external connections from page scripts. For this reason, GitHub files are fetched by Tampermonkey rather than by Cosense UserScript.
+Cosense applies a Content Security Policy (CSP) that restricts external connections from page scripts. Requests to GitHub (`github.com` and `raw.githubusercontent.com`) are blocked, and Cosense has no API that relays file contents, so GitHub files are fetched by Tampermonkey rather than by Cosense UserScript.
 
 ### 1. Install Tampermonkey
 
@@ -226,11 +261,14 @@ Use a commit-pinned permanent link instead of a branch URL when the embedded con
 
 <img src="./images/image03.png" width=65%>
 
-The official X embed uses an iframe, which may be blocked by the Cosense CSP. This repository instead fetches post data through Tampermonkey and renders it as a static card without an iframe.
+The official X embed uses an iframe, which is blocked by the Cosense CSP. This repository instead renders posts as static cards without an iframe. There are two kinds of cards:
 
-### 1. Register the X embed script
+- **UserScript cards** (included in the basic customizations): The author, text, and images are fetched from the API that Cosense uses when you paste a post URL (`/api/embed-text/twitter`). Tampermonkey is not required.
+- **Tampermonkey cards** (optional): Post data is fetched from an X Syndication endpoint, and the card also shows the post time, reply and like counts, the parent post, quoted posts, video thumbnails, and more. When the Tampermonkey script is enabled, its cards are shown instead of the UserScript cards.
 
-Register this as a **separate Tampermonkey script** from the GitHub embed.
+### 1. Register the Tampermonkey script (optional)
+
+Skip this step if the UserScript cards are enough for you. Register this as a **separate Tampermonkey script** from the GitHub embed.
 
 1. Open the Tampermonkey Dashboard.
 2. Click **+** or **Add a new script**.
@@ -249,7 +287,7 @@ Place an X or Twitter post URL on a line by itself.
 https://x.com/OpenAI/status/2075686461693898868
 ```
 
-For replies, the parent post is also displayed when the data is available.
+With the Tampermonkey script, the parent post of a reply is also displayed when the data is available.
 
 To hide the parent post, add `conversation=none`:
 
@@ -264,6 +302,8 @@ When you move the cursor to the URL line, the card disappears so that you can ed
 ### X embed limitations
 
 - Only publicly accessible posts are supported.
+- UserScript cards may cut off the text of long posts, and they do not show the post time, reply counts, or parent posts.
+- UserScript cards rely on an internal Cosense API, so changes made by Cosense may break them.
 - Private, deleted, age-restricted, or otherwise unavailable posts cannot be displayed.
 - Videos are not played directly inside the page. Clicking a thumbnail opens the post on X.
 - Post data is retrieved through an X Syndication endpoint. Because this endpoint is not guaranteed to be a stable public API, changes made by X may break the feature.
@@ -279,7 +319,7 @@ Cosense UserScript and Tampermonkey userscripts can read content from their targ
 - When updating a script, check that `@match` and `@connect` have not been broadened unexpectedly.
 - Disable or remove scripts that you no longer use.
 
-The GitHub embed script currently allows connections to `github.com` and `raw.githubusercontent.com`. The X embed script allows connections to `cdn.syndication.twimg.com`.
+The GitHub embed script currently allows connections to `github.com` and `raw.githubusercontent.com`. The X embed script allows connections to `cdn.syndication.twimg.com`. UserScript X cards send post URLs to the Cosense (`scrapbox.io`) API to fetch the post contents.
 
 ## Troubleshooting
 
@@ -320,7 +360,8 @@ Check the following in order:
 - Confirm that the URL is the only content on its line.
 - Confirm that the URL contains `/status/` followed by a numeric post ID.
 - Confirm that the post is publicly accessible.
-- Open DevTools and check the Console for an error containing `[Cosense static X embed]`.
+- For UserScript cards, confirm that UserScript is enabled and that the "UserScript has been updated" banner is not shown.
+- For Tampermonkey cards, open DevTools and check the Console for an error containing `[Cosense static X embed]`.
 
 ## Restoring the original appearance
 
@@ -332,7 +373,7 @@ If the page becomes difficult to operate, temporarily disable the custom CSS in 
 
 ### Remove an embed feature
 
-Disable or delete the relevant script in the Tampermonkey Dashboard, then reload Cosense.
+Disable or delete the relevant script in the Tampermonkey Dashboard, then reload Cosense. To stop using the UserScript X cards, delete the `code:script.js` block under `[#* X（Twitter）ポスト埋め込み]` on your My Page.
 
 ## Notes for contributors
 

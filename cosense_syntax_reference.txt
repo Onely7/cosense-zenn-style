@@ -94,14 +94,14 @@
 [/icons/hr.icon]
 
 
-[#** Tampermonkey を用いた高度な追加機能]
+[#** 埋め込み表示]
 
 [#* X（Twitter）のポスト埋め込み表示]
- ポストの URL だけを行に書くと、Tampermonkey によりウィジェットが表示される
+ ポストの URL だけを行に書くと、カードが表示される（Tampermonkey 版を入れると、投稿日時やリプライ元も表示される）
   `https://x.com/jack/status/20`
 https://x.com/OpenAI/status/2075686461693898868?s=20
 
- リプライ元を表示しない場合は、URL のクエリパラメータに `conversation=none` を指定する
+ Tampermonkey 版でリプライ元を表示しない場合は、URL のクエリパラメータに `conversation=none` を指定する
   `https://x.com/example/status/1234567890?conversation=none`
 
 https://x.com/OpenAI/status/2075274276849226204?s=20
@@ -109,6 +109,7 @@ https://x.com/OpenAI/status/2075274276849226204?s=20
 https://x.com/OpenAI/status/2075274276849226204?conversation=none
 
 [#* Github の埋め込み表示]
+ Tampermonkey 用のスクリプトを入れると、ファイルの中身が表示される
 [* Github の埋め込み表示に対応している URL]
 	1. ファイル全体
 		`https://github.com/octocat/Spoon-Knife/blob/main/README.md`

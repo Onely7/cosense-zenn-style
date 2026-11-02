@@ -6,7 +6,7 @@ Cosense Zenn Style は、[Zenn の Markdown ガイド](https://zenn.dev/zenn/art
 
 <img src="./images/image01.png" width=65%>
 
-Cosense が持つ編集体験はそのままに、見出し、引用、コード、表などの見た目を整えます。必要に応じて Tampermonkey を追加すると、GitHub のファイルや X（Twitter）のポストもカード形式で表示できます。
+Cosense が持つ編集体験はそのままに、見出し、引用、コード、表などの見た目を整えます。X（Twitter）のポストは UserScript だけでカード形式で表示でき、必要に応じて Tampermonkey を追加すると、GitHub のファイルの埋め込みや、より詳しい X のカードも表示できます。
 
 > [!CAUTION]
 > UserCSS、UserScript、Tampermonkey のユーザースクリプトは、Web ページの見た目や動作を書き換える強力な機能です。  
@@ -23,12 +23,15 @@ Cosense が持つ編集体験はそのままに、見出し、引用、コード
 - 引用
 - インラインコードとコードブロック
 - 表
-- ナビゲーションバー
-- 編集行とテキストカーソルの視認性
+- 画面上部に固定した、すりガラス風のヘッダー
+- ライトモードとダークモードの切り替えボタン
+- 編集行と、点滅しないテキストカーソルの視認性
 - ページ内見出しメニュー（見出しを階層付きで一覧表示）
-- 広い画面で本文の横に追従する目次
+- 広い画面で本文の横に追従する目次（スマホではヘッダーのメニューボタンから開く）
 - 見出しへのリンクのコピー
 - 絵文字候補の検索と挿入
+- ページのダウンロード（Cosense 形式の `.txt` と Markdown 形式の `.md`）
+- X（Twitter）ポストのカード表示（投稿者・本文・画像）
 - Cosense のダーク系テーマへの対応
 
 ### Tampermonkey を使う追加機能
@@ -36,7 +39,7 @@ Cosense が持つ編集体験はそのままに、見出し、引用、コード
 次の機能は任意です。基本カスタマイズだけを使う場合、[Tampermonkey](https://www.tampermonkey.net/) は必要ありません。
 
 - 公開 GitHub リポジトリにあるテキストファイルの埋め込み
-- X（Twitter）ポストの静的カード表示
+- X（Twitter）ポストの詳しいカード表示（投稿日時、返信数・いいね数など）
 - リプライ元ポストの表示・非表示
 - 引用ポスト、画像、動画サムネイルなどの表示
 
@@ -47,7 +50,7 @@ Cosense が持つ編集体験はそのままに、見出し、引用、コード
 | [`main_user_css_script_for_mypage.txt`](main_user_css_script_for_mypage.txt) | Cosense の自分のページへ貼り付ける UserCSS と UserScript |
 | [`cosense_syntax_reference.txt`](cosense_syntax_reference.txt) | 見た目と埋め込み機能を確認するためのサンプルページ |
 | [`cosense_github_embed_tampermonkey.user.js`](./tampermonkey/cosense_github_embed_tampermonkey.user.js) | GitHub ファイル埋め込み用の Tampermonkey スクリプト |
-| [`cosense_x_post_embed_tampermonkey.user.js`](./tampermonkey/cosense_x_post_embed_tampermonkey.user.js) | X ポスト埋め込み用の Tampermonkey スクリプト |
+| [`cosense_x_post_embed_tampermonkey.user.js`](./tampermonkey/cosense_x_post_embed_tampermonkey.user.js) | X ポストを詳しいカードで表示する Tampermonkey スクリプト（任意） |
 
 ## 動作環境
 
@@ -127,10 +130,17 @@ code:script.js
 [*# 小さな見出し]
 ```
 
+### ヘッダーとライト／ダークモード
+
+- ヘッダーは画面上部に固定され、背後の本文がうっすら透けるすりガラス風に表示されます。
+- 自分のアイコンの左隣にあるボタンで、ライトモードとダークモードを切り替えられます。ボタンには、押したときに切り替わる先のモードのアイコン（月または太陽）が表示されます。
+- 選んだモードはブラウザーに保存され、すべてのプロジェクトで使われます。プロジェクトのテーマと同じ明るさに戻すと、保存した設定を消してテーマに従います。
+
 ### 目次と見出しリンク
 
 - 右側のページメニューにある「見出し」から、ページ内の見出しへ移動できます。`#` を含む見出しを `*` の数に応じた階層で表示し、`#` を含む見出しがないページでは `[** 見出し]` のような太字だけの行を使います。
-- 画面幅が 1300px 以上のときは、見出しが 2 つ以上あるページで本文の右に目次を表示し、スクロール位置に合わせて現在の見出しを強調します。
+- 画面幅が 1300px 以上のときは、見出しが 2 つ以上あるページで本文の右に目次を表示し、スクロール位置に合わせて現在の見出しを強調します。目次の高さは画面の約 75% までで、収まらない分は目次の中でスクロールできます。
+- 画面幅が 767px 以下のときは、ヘッダー左端のメニューボタン（☰）から同じデザインの目次を開けます。見出しを選ぶとその位置へ移動し、目次の外をタップするか `Esc` で閉じます。
 - 見出しにマウスを重ねる（スマホでは見出しをタップする）と、その見出しへのリンク（ページの URL と行 ID）をコピーするボタンが表示されます。
 
 ### 絵文字候補
@@ -142,6 +152,30 @@ code:script.js
 - URL の `https:` や時刻の `12:30` のように、英数字の直後の `:` では候補を表示しません。
 - ページメニューの「emoji」にある「load emojis from /emoji」を押すと、[/emoji](https://scrapbox.io/emoji) プロジェクトのアイコンも候補に加わります。画像を取得できないアイコンは、名前の頭文字で表示します。
 
+### ページのダウンロード
+
+ページメニューの「ダウンロード」（絵文字のボタンの下）から、表示中のページを保存できます。
+
+- **Cosense 形式 (.txt)**: ページの本文をそのまま保存します。
+- **Markdown 形式 (.md)**: ブラウザー内で Cosense の記法を Markdown に変換してから保存します。
+
+Markdown への変換では、主に次のように書き換えます。
+
+| Cosense | Markdown |
+| --- | --- |
+| タイトル | `# タイトル` |
+| 見出し（目次と同じ規則で判定） | `##` 〜 `######` |
+| インデントした行、`1. ` で始まる行 | 箇条書き、番号付きリスト |
+| `[_]` / `[x]` で始まる行 | タスクリスト（`- [ ]` / `- [x]`） |
+| `[* 太字]` `[/ 斜体]` `[- 打ち消し]` `[! マーカー]` | `**太字**` `*斜体*` `~~打ち消し~~` `**マーカー**` |
+| `code:ファイル名.拡張子` | ```` ```拡張子:ファイル名 ````（Zenn と同じ形式） |
+| `table:名前` | 表（1 行目を見出し行にする） |
+| `[ページ]`、`#タグ` | プロジェクトのページへのリンク |
+| `[$ 数式]` | `$数式$` |
+| アイコン、画像 | 画像 |
+
+画面幅が狭いときは、Cosense の仕様でページメニューの拡張ボタンが一部しか表示されないことがあります。その場合は、ヘッダーのメニューボタン（☰）で開く目次の下部からダウンロードしてください。
+
 ### 配色と本文幅の調整
 
 `[*# 配色と寸法]` のコードブロックにある CSS 変数を書き換えると、色や本文幅を変更できます。
@@ -152,14 +186,15 @@ code:script.js
 | `--zs-toc-width` | 追従する目次の幅 | `240px` |
 | `--zs-font-size` / `--zs-line-height` | 本文の文字サイズと行の高さ（画面幅 767px 以下では `16px` / `28px`） | `18px` / `32px` |
 | `--zs-accent` | チェックボックス、新規ページボタン、目次などのアクセント色 | `#3ea8ff` |
+| `--zs-navbar-height` | ヘッダーの高さ（Cosense 標準は `40px`） | `48px` |
 
-プロジェクトのテーマが default-dark、paper-dark-dark、hacker1、hacker2 のときは、暗い背景向けの配色へ自動で切り替わります。ナビゲーションバーや背景など Cosense 本体の部分は、テーマの配色をそのまま使います。
+プロジェクトのテーマが default-dark、paper-dark-dark、hacker1、hacker2 のとき（ヘッダーのボタンでダークモードにしたときを含む）は、暗い背景向けの配色へ自動で切り替わります。背景など Cosense 本体の部分は、テーマの配色をそのまま使います。
 
 ## GitHub ファイルを埋め込む
 
 <img src="./images/image02.png" width=65%>
 
-Cosense のページには、外部通信を制限する CSP（Content Security Policy）があります。そのため、GitHub ファイルの取得処理は Cosense の UserScript ではなく、Tampermonkey 側で実行します。
+Cosense のページには、外部通信を制限する CSP（Content Security Policy）があります。GitHub（`github.com`・`raw.githubusercontent.com`）への通信は CSP で拒否され、ファイルの中身を中継する Cosense の API もないため、GitHub ファイルの取得処理は Cosense の UserScript ではなく、Tampermonkey 側で実行します。
 
 ### 1. Tampermonkey をインストールする
 
@@ -226,11 +261,14 @@ URL の行へカーソルを移すと、編集できるように埋め込みカ�
 
 <img src="./images/image03.png" width=65%>
 
-X の公式埋め込みは iframe を使いますが、Cosense の CSP により iframe が表示できない場合があります。本リポジトリでは、Tampermonkey から投稿データを取得し、iframe を使わない静的なカードとして描画します。
+X の公式埋め込みは iframe を使いますが、Cosense の CSP により iframe は表示できません。本リポジトリでは、iframe を使わない静的なカードとして表示します。カードには次の 2 種類があります。
 
-### 1. X 埋め込みスクリプトを登録する
+- **UserScript のカード**（基本カスタマイズに含まれます）: Cosense がポスト URL の貼り付け時に使う API（`/api/embed-text/twitter`）から、投稿者・本文・画像を取得して表示します。Tampermonkey は必要ありません。
+- **Tampermonkey 版のカード**（任意）: X の Syndication 用エンドポイントから取得し、投稿日時、返信数・いいね数、リプライ元、引用ポスト、動画サムネイルなども表示します。Tampermonkey 版が有効なときは、UserScript のカードの代わりにこちらを表示します。
 
-GitHub 埋め込みとは**別の新規スクリプト**として登録します。
+### 1. Tampermonkey 版を登録する（任意）
+
+UserScript のカードだけを使う場合、この手順は不要です。GitHub 埋め込みとは**別の新規スクリプト**として登録します。
 
 1. Tampermonkey のダッシュボードを開きます。
 2. **＋** または **新規スクリプトを追加**をクリックします。
@@ -249,7 +287,7 @@ X または Twitter のポスト URL を、ほかの文字を付けずに1行だ
 https://x.com/OpenAI/status/2075686461693898868
 ```
 
-リプライの URL では、取得できる場合にリプライ元のポストも表示します。
+Tampermonkey 版では、リプライの URL のときに、取得できればリプライ元のポストも表示します。
 
 リプライ元を表示しない場合は、`conversation=none` を指定します。
 
@@ -264,6 +302,8 @@ URL の行へカーソルを移すとカードが消え、URLを編集できま�
 ### X 埋め込みの制限
 
 - 公開状態で取得できるポストだけを対象とします。
+- UserScript のカードでは、長いポストの本文が途中で省略されることがあります。また、投稿日時、返信数、リプライ元などは表示しません。
+- UserScript のカードは Cosense の内部 API を利用しているため、Cosense 側の変更で動作しなくなる可能性があります。
 - 非公開、削除済み、年齢制限などで取得できないポストは表示できません。
 - 動画はページ内で直接再生せず、サムネイルから X を開きます。
 - 投稿の取得には X の Syndication 用エンドポイントを利用しています。このエンドポイントは一般向け API として安定性が保証されたものではないため、X 側の変更で動作しなくなる可能性があります。
@@ -279,7 +319,7 @@ Cosense の UserScript と Tampermonkey のユーザースクリプトは、対�
 - `@match` や `@connect` が意図せず広げられていないか、更新時に確認する
 - 不要になったスクリプトは無効化または削除する
 
-現在の GitHub 埋め込みスクリプトは、`github.com` と `raw.githubusercontent.com` への通信を許可しています。X 埋め込みスクリプトは、`cdn.syndication.twimg.com` への通信を許可しています。
+現在の GitHub 埋め込みスクリプトは、`github.com` と `raw.githubusercontent.com` への通信を許可しています。X 埋め込みスクリプトは、`cdn.syndication.twimg.com` への通信を許可しています。UserScript の X カードは、ポスト URL を Cosense（`scrapbox.io`）の API へ送って投稿の内容を取得します。
 
 ## トラブルシューティング
 
@@ -320,7 +360,8 @@ Cosense の UserScript と Tampermonkey のユーザースクリプトは、対�
 - URL だけの行になっているか確認します。
 - URL に `/status/数字` が含まれているか確認します。
 - ポストが公開されているか確認します。
-- DevTools の Console で `[Cosense static X embed]` を含むエラーを確認します。
+- UserScript のカードの場合は、UserScript が有効か、「UserScriptが更新されました」と表示されていないか確認します。
+- Tampermonkey 版の場合は、DevTools の Console で `[Cosense static X embed]` を含むエラーを確認します。
 
 ## 元の表示へ戻す
 
@@ -332,7 +373,7 @@ Cosense の UserScript と Tampermonkey のユーザースクリプトは、対�
 
 ### 埋め込み機能を外す
 
-Tampermonkey のダッシュボードで、対象スクリプトを無効化または削除し、Cosense を再読み込みします。
+Tampermonkey のダッシュボードで、対象スクリプトを無効化または削除し、Cosense を再読み込みします。UserScript の X カードを使わない場合は、自分のページの `[#* X（Twitter）ポスト埋め込み]` にある `code:script.js` を削除します。
 
 ## 開発者向けメモ
 
