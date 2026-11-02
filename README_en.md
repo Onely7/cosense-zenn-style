@@ -21,7 +21,6 @@ Paste `main_user_css_script_for_mypage.txt` into your My Page to customize the f
 - Background color, content width, font size, and line spacing (slightly smaller text on narrow screens)
 - Headings, highlights, checkboxes, and bullet lists
 - Blockquotes
-- Message boxes similar to Zenn's `:::message`
 - Inline code and code blocks
 - Tables
 - Navigation bar
@@ -127,17 +126,6 @@ Add `#` to the bold notation, as in `[*# Heading]`, to display a line as a headi
 [**# Medium heading]
 [*# Small heading]
 ```
-
-### Message boxes
-
-You can write boxes equivalent to Zenn's `:::message` and `:::message alert` with the following notation:
-
-```text
-[~ Message]
-[~! Warning message]
-```
-
-Consecutive lines of the same type are displayed as a single box.
 
 ### Table of contents and heading links
 
