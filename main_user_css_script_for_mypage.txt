@@ -222,6 +222,7 @@ code:style.css
  .line code {
    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace,
      'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+   letter-spacing: normal; /* 本文の字間を引き継がず、等幅の桁をそろえる */
    -webkit-font-smoothing: antialiased;
  }
  
@@ -234,6 +235,13 @@ code:style.css
    margin: 0 0.1em;
    font-size: 0.85em;
    vertical-align: 0.08em;
+ }
+ 
+ /* Cosense がインラインコードへ自動で付けるハイライトの色を打ち消し、Zenn と同じ単色にする */
+ .line code:not(.code-start):not(.code-body) [class*="hljs-"] {
+   color: inherit;
+   font-style: inherit;
+   font-weight: inherit;
  }
  
  /* コードブロック本体 */
