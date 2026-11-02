@@ -3156,14 +3156,23 @@ code:script.js
        const content = labelText(slots[index])
        return codeSlots.has(Number(index)) ? content.replace(/^`|`$/g, '').replace(/\\`/g, '`') : content
      })
-     // HTML のコメント・画像・リンク・そのほかのタグ
+     // HTML のコメント・画像・リンク・そのほかのタグ（キー入力の <kbd> はインラインコードにする）
      text = text.replace(/<!--[\s\S]*?-->/g, '')
+     text = text.replace(/<kbd>([\s\S]*?)<\/kbd>/gi, (_, key) => hold('`' + key.replace(/<[^>]+>/g, '').replace(/`/g, '\\`') + '`', true))
      text = text.replace(/<img\s[^>]*?src=["']([^"']+)["'][^>]*>/gi, (_, src) => hold(`[${src}]`))
      text = text.replace(/<a\s[^>]*?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, label) => hold(convertLink(labelText(label.replace(/<[^>]+>/g, '')), href)))
      text = text.replace(/<\/?(?:span|kbd|sup|sub|u|ins|mark|small|big|font|abbr|cite|div|p|center|details|summary)\b[^>]*>/gi, '')
-     // リンク付きの画像・画像・リンク
-     text = text.replace(/\[!\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, src, href) => hold(`[${href} ${src}]`))
-     text = text.replace(/!\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, src) => hold(`[${src.replace(/^(https:\/\/gyazo\.com\/[0-9a-f]{32})\/raw$/i, '$1')}]`))
+     // Zenn の埋め込み（@[card](URL) など）は URL にする（YouTube は Cosense で動画を埋め込める形にする）
+     text = text.replace(/@\[([a-z]+)\]\(([^)\s]+)\)/g, (_, type, target) => {
+       if (type === 'youtube') return hold(`[${/^https?:\/\//.test(target) ? target : `https://www.youtube.com/watch?v=${target}`}]`)
+       return hold(/^https?:\/\//.test(target) ? target : `${type}: ${target}`)
+     })
+     // 脚注。Cosense には脚注がないため、参照 [^名前] は ^名前 に、Zenn のインライン脚注 ^[本文] は（本文）にする
+     text = text.replace(/\^\[([^\]]+)\]/g, '（$1）')
+     text = text.replace(/\[\^([^\]\s]+)\]/g, (_, name) => hold(`^${name}`))
+     // リンク付きの画像・画像・リンク（画像の URL のあとの Zenn の大きさの指定 =250x は使わない）
+     text = text.replace(/\[!\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+=\d*x\d*)?(?:\s+"[^"]*")?\)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, src, href) => hold(`[${href} ${src}]`))
+     text = text.replace(/!\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+=\d*x\d*)?(?:\s+"[^"]*")?\)/g, (_, src) => hold(`[${src.replace(/^(https:\/\/gyazo\.com\/[0-9a-f]{32})\/raw$/i, '$1')}]`))
      text = text.replace(/\[([^\]]+)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (_, label, url) => hold(convertLink(labelText(label), url)))
      // 参照形式のリンク [文字][名前]・[名前][]・[名前]
      text = text.replace(/\[([^\]]+)\]\[([^\]]*)\]/g, (match, label, name) => {
@@ -3244,8 +3253,10 @@ code:script.js
    const TABLE_DELIMITER = /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/
    const HR = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/
  
-   // コードブロックの名前（Zenn の「言語:ファイル名」の形にも対応する）
-   const codeName = info => {
+   // コードブロックの名前（Zenn の「言語:ファイル名」と、title="ファイル名" の形にも対応する）
+   const codeName = (info, rest = '') => {
+     const title = /\btitle=(?:"([^"]+)"|'([^']+)'|([^\s"']+))/.exec(rest)
+     if (title) return title[1] ?? title[2] ?? title[3]
      if (!info) return 'text'
      const separator = info.indexOf(':')
      if (separator >= 0 && separator < info.length - 1) return info.slice(separator + 1)
@@ -3382,7 +3393,7 @@ code:script.js
        // コードブロック
        const fence = FENCE.exec(line)
        if (fence) {
-         const [, , mark, info] = fence
+         const [, , mark, info, rest] = fence
          const codeLines = []
          let end = index + 1
          while (end < source.length) {
@@ -3400,7 +3411,7 @@ code:script.js
            for (const command of commands) emit(command, 'text')
            continue
          }
-         emit(`${' '.repeat(indent)}code:${codeName(info)}`, 'code')
+         emit(`${' '.repeat(indent)}code:${codeName(info, rest)}`, 'code')
          for (const code of codeLines) emit(`${' '.repeat(indent + 1)}${dedent(code, width)}`, 'code')
          continue
        }
@@ -3503,8 +3514,8 @@ code:script.js
          // 箇条書きの中のコードブロック（- ```js）
          const innerFence = FENCE.exec(content)
          if (innerFence) {
-           const [, , mark, info] = innerFence
-           emit(`${prefix}code:${codeName(info)}`, 'code')
+           const [, , mark, info, rest] = innerFence
+           emit(`${prefix}code:${codeName(info, rest)}`, 'code')
            let end = index + 1
            while (end < source.length && !new RegExp(`^\\s*${mark[0] === '`' ? '`' : '~'}{${mark.length},}\\s*$`).test(source[end])) {
              emit(`${prefix} ${dedent(source[end], contentColumn)}`, 'code')
