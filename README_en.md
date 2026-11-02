@@ -42,6 +42,7 @@ The following features are optional. You do not need [Tampermonkey](https://www.
 - More detailed cards for X (Twitter) posts (post time, reply and like counts, and more)
 - Showing or hiding the parent post of a reply
 - Displaying quoted posts, images, video thumbnails, and related content
+- Card colors that follow Cosense dark themes, and card sizes adjustable with CSS custom properties
 
 ## Files
 
@@ -138,9 +139,9 @@ Add `#` to the bold notation, as in `[*# Heading]`, to display a line as a headi
 
 ### Table of contents and heading links
 
-- Use **見出し** (Headings) in the page menu on the right to jump to a heading on the page. Headings containing `#` are listed with a hierarchy based on the number of `*` characters. On pages without such headings, lines that consist only of bold text, such as `[** Heading]`, are used instead.
+- Use **見出し** (Headings) in the page menu on the right to jump to a heading on the page. Headings containing `#` are listed with a hierarchy based on the number of `*` characters. On pages without such headings, lines that consist only of bold text, such as `[** Heading]`, are used instead. On screens 767px wide or narrower, **見出し** is not added to the page menu because the table of contents opens from the menu button in the header.
 - On screens 1300px or wider, pages with two or more headings show a table of contents to the right of the page. The current heading is highlighted as you scroll. The table of contents takes up at most about 75% of the screen height and scrolls on its own when it is longer.
-- On screens 767px wide or narrower, the same table of contents opens from the menu button (☰) at the left end of the header. Choose a heading to jump to it, and tap outside the table of contents or press `Esc` to close it.
+- On screens 767px wide or narrower, the same table of contents opens from the menu button (☰) to the right of your icon in the header. Choose a heading to jump to it, and tap outside the table of contents or press `Esc` to close it.
 - When you hover over a heading (or tap it on a phone), a button appears that copies a link to that heading (the page URL with the line ID).
 
 ### Emoji suggestions
@@ -166,13 +167,21 @@ The Markdown conversion mainly works as follows:
 | Title | `# Title` |
 | Headings (detected with the same rules as the table of contents) | `##` to `######` |
 | Indented lines and lines starting with `1. ` | Bulleted and numbered lists |
+| Consecutive lines | Line breaks (two trailing spaces) |
 | Lines starting with `[_]` / `[x]` | Task lists (`- [ ]` / `- [x]`) |
+| `[_]` / `[x]` inside a line | ☐ / ☑ |
 | `[* bold]` `[/ italic]` `[- strikethrough]` `[! highlight]` | `**bold**` `*italic*` `~~strikethrough~~` `**highlight**` |
 | `code:file.ext` | ```` ```ext:file ```` (the same format as Zenn) |
+| Lines starting with `$ ` or `% ` (command lines) | A ```` ```console ```` code block |
 | `table:name` | A table (the first row becomes the header row) |
 | `[page]`, `#tag` | Links to pages in the project |
 | `[$ formula]` | `$formula$` |
-| Icons and images | Images |
+| A line containing only `[/icons/hr.icon]` | A horizontal rule (`---`) |
+| A line containing only a URL | A paragraph with only the URL (shown as a link card on Zenn) |
+| Icons | Small images (icons whose images cannot be loaded become links to the icon pages) |
+| Images | Images (images uploaded to Cosense become links because other sites cannot display them) |
+
+For bold and other emphasis in Japanese text, a space is added outside the markers only where CommonMark would otherwise not treat the text as emphasis, such as when a bracket like 「 or `[` comes right inside the markers.
 
 On narrow screens, Cosense may show only some of the extension buttons in the page menu. In that case, use the download buttons at the bottom of the table of contents that opens from the menu button (☰) in the header.
 
@@ -188,7 +197,26 @@ Edit the CSS custom properties in the `[*# 配色と寸法]` code block to chang
 | `--zs-accent` | Accent color for checkboxes, the new page button, the table of contents, and more | `#3ea8ff` |
 | `--zs-navbar-height` | Height of the header (`40px` in standard Cosense) | `48px` |
 
-When the project theme is default-dark, paper-dark-dark, hacker1, or hacker2 (including when you switch to dark mode with the header button), the colors automatically switch to a palette for dark backgrounds. Cosense's own interface, such as the background, keeps the theme colors.
+When the project theme is default-dark, paper-dark-dark, hacker1, or hacker2 (including when you switch to dark mode with the header button), the colors automatically switch to a palette for dark backgrounds. Cosense's own interface, such as the background, keeps the theme colors. The Tampermonkey embed cards also switch to dark colors under the same conditions.
+
+### Embed card sizes
+
+Change the size of the X and GitHub embed cards with the following CSS custom properties in the `[*# 配色と寸法]` code block. The Tampermonkey cards use the same properties.
+
+| Property | Description | Default |
+| --- | --- | --- |
+| `--zs-x-embed-width` | Width of X post cards (never wider than the page content) | `550px` |
+| `--zs-github-embed-width` | Width of GitHub file cards | `100%` |
+| `--zs-github-embed-max-height` | Maximum height of the code area in GitHub file cards (longer code scrolls inside the card) | `360px` |
+
+For example, to make X cards a little smaller and show more code in GitHub cards, change the values as follows:
+
+```css
+--zs-x-embed-width: 480px;
+--zs-github-embed-max-height: 600px;
+```
+
+If you use only the Tampermonkey cards without the basic customizations, add a rule such as `:root { --zs-x-embed-width: 480px; }` to the UserCSS on your My Page.
 
 ## Embedding GitHub files
 
@@ -211,6 +239,16 @@ In Chrome 138 or later, you must explicitly allow extensions to execute userscri
 If you cannot find this option, see the [official Tampermonkey FAQ](https://www.tampermonkey.net/faq.php?locale=en&q=Q209).
 
 ### 3. Register the GitHub embed script
+
+Open the following URL in Chrome to show the Tampermonkey installation page. Click **Install**, then reload Cosense.
+
+```text
+https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_github_embed_tampermonkey.user.js
+```
+
+After installation, Tampermonkey checks this URL for new versions and updates the script.
+
+If the installation page does not appear, register the script as follows:
 
 1. Click the Tampermonkey icon in the upper-right corner of Chrome.
 2. Open the **Dashboard**.
@@ -270,6 +308,14 @@ The official X embed uses an iframe, which is blocked by the Cosense CSP. This r
 
 Skip this step if the UserScript cards are enough for you. Register this as a **separate Tampermonkey script** from the GitHub embed.
 
+Open the following URL in Chrome, click **Install** on the Tampermonkey installation page, and reload Cosense. After installation, Tampermonkey checks this URL for new versions and updates the script.
+
+```text
+https://raw.githubusercontent.com/Onely7/cosense-zenn-style/main/tampermonkey/cosense_x_post_embed_tampermonkey.user.js
+```
+
+If the installation page does not appear, register the script as follows:
+
 1. Open the Tampermonkey Dashboard.
 2. Click **+** or **Add a new script**.
 3. Delete the template code in the editor.
@@ -303,6 +349,7 @@ When you move the cursor to the URL line, the card disappears so that you can ed
 
 - Only publicly accessible posts are supported.
 - UserScript cards may cut off the text of long posts, and they do not show the post time, reply counts, or parent posts.
+- Tampermonkey cards also show only the beginning of long posts (including parent posts) and add a **全文をXで読む** (Read the full post on X) link.
 - UserScript cards rely on an internal Cosense API, so changes made by Cosense may break them.
 - Private, deleted, age-restricted, or otherwise unavailable posts cannot be displayed.
 - Videos are not played directly inside the page. Clicking a thumbnail opens the post on X.
@@ -344,6 +391,7 @@ Check the following in order:
 - Confirm that Tampermonkey itself is enabled.
 - Confirm that the target script is enabled.
 - Confirm that **Allow User Scripts** is enabled in Chrome.
+- On the extension details page, confirm that **Site access** for Tampermonkey is set to **On all sites** (or includes scrapbox.io).
 - Check that an older version of the same feature is not enabled at the same time.
 - Reload Cosense.
 
