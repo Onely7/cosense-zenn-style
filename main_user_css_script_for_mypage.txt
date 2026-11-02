@@ -1192,7 +1192,8 @@ code:style.css
  }
  
  /*
-  * スマホ幅では、ヘッダーの自分のアイコンの右隣にあるボタンから目次を開く。
+  * 本文の横に目次を表示しない画面（1299px 以下のタブレットやスマホなど）では、ヘッダーの自分のアイコンの右隣にあるボタンから目次を開く。
+  * ボタンを表示するかどうかは UserScript が決める（hidden 属性）。
   * Cosense の .navbar .navbar-menu > li { display: block } より優先されるように、同じ形のセレクターにする
   */
  .navbar .navbar-menu > li.zs-toc-toggle-item,
@@ -1201,94 +1202,101 @@ code:style.css
    display: none;
  }
  
- @media (max-width: 767px) {
-   .navbar .navbar-menu > li.zs-toc-toggle-item:not([hidden]) {
-     display: flex;
-     align-items: center;
-   }
+ .navbar .navbar-menu > li.zs-toc-toggle-item:not([hidden]) {
+   display: flex;
+   align-items: center;
+ }
  
-   .navbar .zs-toc-toggle {
-     display: flex;
-     flex: none;
-     align-items: center;
-     justify-content: center;
-     width: 32px;
-     height: 32px;
-     padding: 0;
-     color: var(--zs-navbar-icon);
-     background: none;
-     border: none;
-     border-radius: 50%;
-     cursor: pointer;
-   }
+ .navbar .zs-toc-toggle {
+   display: flex;
+   flex: none;
+   align-items: center;
+   justify-content: center;
+   width: 32px;
+   height: 32px;
+   padding: 0;
+   color: var(--zs-navbar-icon);
+   background: none;
+   border: none;
+   border-radius: 50%;
+   cursor: pointer;
+ }
  
-   .navbar .zs-toc-toggle:hover {
-     background-color: var(--zs-navbar-hover-bg);
-   }
+ .navbar .zs-toc-toggle:hover {
+   background-color: var(--zs-navbar-hover-bg);
+ }
  
-   .navbar .zs-toc-toggle:focus-visible {
-     outline: 2px solid var(--zs-accent);
-     outline-offset: 1px;
-   }
+ .navbar .zs-toc-toggle:focus-visible {
+   outline: 2px solid var(--zs-accent);
+   outline-offset: 1px;
+ }
  
-   .zs-toc-toggle svg {
-     width: 22px;
-     height: 22px;
-     fill: currentColor;
-   }
+ .zs-toc-toggle svg {
+   width: 22px;
+   height: 22px;
+   fill: currentColor;
+ }
  
-   /* 開いた目次（ヘッダーのすぐ下に、PC と同じ見た目で表示する） */
+ /* 開いた目次（ヘッダーのすぐ下に、本文の横の目次と同じ見た目で表示する） */
+ .app:not(.presentation) .zs-toc.is-open {
+   display: block;
+   position: fixed;
+   top: calc(var(--zs-navbar-height) + 8px);
+   right: 8px;
+   left: 8px;
+   z-index: 999;
+   box-sizing: border-box;
+   max-height: min(75vh, calc(100dvh - var(--zs-navbar-height) - 24px));
+   overflow-y: auto;
+   overscroll-behavior: contain;
+   padding: 16px 12px 16px 14px;
+   color: var(--zs-text-muted);
+   background-color: var(--zs-panel-bg);
+   -webkit-backdrop-filter: saturate(180%) blur(16px);
+   backdrop-filter: saturate(180%) blur(16px);
+   border: 1px solid var(--zs-border);
+   border-radius: 12px;
+   box-shadow: var(--zs-shadow);
+   font-size: 14px;
+   line-height: 1.5;
+   letter-spacing: normal;
+   animation: zs-toc-open 0.16s ease-out;
+ }
+ 
+ /* タブレットなど幅に余裕のある画面では、ボタンの下に幅を抑えて開く */
+ @media (min-width: 768px) {
    .app:not(.presentation) .zs-toc.is-open {
-     display: block;
-     position: fixed;
-     top: calc(var(--zs-navbar-height) + 8px);
-     right: 8px;
-     left: 8px;
-     z-index: 999;
-     box-sizing: border-box;
-     max-height: min(75vh, calc(100dvh - var(--zs-navbar-height) - 24px));
-     overflow-y: auto;
-     overscroll-behavior: contain;
-     padding: 16px 12px 16px 14px;
-     color: var(--zs-text-muted);
-     background-color: var(--zs-panel-bg);
-     -webkit-backdrop-filter: saturate(180%) blur(16px);
-     backdrop-filter: saturate(180%) blur(16px);
-     border: 1px solid var(--zs-border);
-     border-radius: 12px;
-     box-shadow: var(--zs-shadow);
-     font-size: 14px;
-     line-height: 1.5;
-     letter-spacing: normal;
-     animation: zs-toc-open 0.16s ease-out;
+     right: 16px;
+     left: auto;
+     width: min(380px, calc(100vw - 32px));
    }
+ }
  
-   .zs-toc.is-open .zs-toc-item a {
-     padding-top: 5px;
-     padding-bottom: 5px;
-   }
+ .zs-toc.is-open .zs-toc-item a {
+   padding-top: 5px;
+   padding-bottom: 5px;
+ }
  
-   .zs-toc.is-open .zs-toc-item a::before {
-     top: calc(5px + 0.75em - 3px);
-   }
+ .zs-toc.is-open .zs-toc-item a::before {
+   top: calc(5px + 0.75em - 3px);
+ }
  
-   .zs-toc.is-open .zs-toc-item[data-depth="0"] a::before {
-     top: calc(5px + 0.75em - 5px);
-   }
+ .zs-toc.is-open .zs-toc-item[data-depth="0"] a::before {
+   top: calc(5px + 0.75em - 5px);
+ }
  
-   .zs-toc.is-open .zs-toc-list:empty + .zs-toc-empty {
-     display: block;
-     margin: 0;
-   }
+ .zs-toc.is-open .zs-toc-list:empty + .zs-toc-empty {
+   display: block;
+   margin: 0;
+ }
  
-   /* 目次の外をタップしたら閉じる */
-   .zs-toc-scrim.is-open {
-     display: block;
-     position: fixed;
-     inset: 0;
-     z-index: 998;
-     background-color: rgba(15, 23, 42, 0.2);
-   }
+ /* 目次の外をタップしたら閉じる */
+ .zs-toc-scrim.is-open {
+   display: block;
+   position: fixed;
+   inset: 0;
+   z-index: 998;
+   background-color: rgba(15, 23, 42, 0.2);
  }
  
  @keyframes zs-toc-open {
@@ -1304,46 +1312,44 @@ code:style.css
    }
  }
  
- /* スマホの目次メニューの下端に置く、ページのダウンロード */
+ /* ヘッダーのボタンで開く目次の下端に置く、ページのダウンロード */
  .zs-toc-actions {
    display: none;
  }
  
- @media (max-width: 767px) {
-   .zs-toc.is-open .zs-toc-actions {
-     position: sticky;
-     bottom: -16px;
-     display: flex;
-     flex-wrap: wrap;
-     gap: 8px;
-     margin: 12px -12px -16px -14px;
-     padding: 10px 12px 12px 14px;
-     background-color: var(--zs-surface);
-     border-top: 1px solid var(--zs-border);
-   }
+ .zs-toc.is-open .zs-toc-actions {
+   position: sticky;
+   bottom: -16px;
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin: 12px -12px -16px -14px;
+   padding: 10px 12px 12px 14px;
+   background-color: var(--zs-surface);
+   border-top: 1px solid var(--zs-border);
+ }
  
-   .zs-toc-actions span {
-     flex-basis: 100%;
-     color: var(--zs-text);
-     font-size: 13px;
-     font-weight: 700;
-   }
+ .zs-toc-actions span {
+   flex-basis: 100%;
+   color: var(--zs-text);
+   font-size: 13px;
+   font-weight: 700;
+ }
  
-   .zs-toc-actions button {
-     flex: 1 1 0;
-     padding: 6px 8px;
-     color: var(--zs-accent-strong);
-     background-color: var(--zs-surface-muted);
-     border: 1px solid var(--zs-border);
-     border-radius: 6px;
-     font-size: 13px;
-     cursor: pointer;
-   }
+ .zs-toc-actions button {
+   flex: 1 1 0;
+   padding: 6px 8px;
+   color: var(--zs-accent-strong);
+   background-color: var(--zs-surface-muted);
+   border: 1px solid var(--zs-border);
+   border-radius: 6px;
+   font-size: 13px;
+   cursor: pointer;
+ }
  
-   .zs-toc-actions button:hover,
-   .zs-toc-actions button:focus-visible {
-     border-color: var(--zs-accent);
-   }
+ .zs-toc-actions button:hover,
+ .zs-toc-actions button:focus-visible {
+   border-color: var(--zs-accent);
  }
  
  /* 見出しリンクのコピーボタン */
@@ -1728,7 +1734,7 @@ code:script.js
 
 [#* 追従する目次]
  画面幅が 1300px 以上のとき、見出しが 2 つ以上あるページでは本文の右に目次を表示し、スクロールに合わせて現在の見出しを強調する
- スマホ幅（767px 以下）では、ヘッダーの自分のアイコンの右隣にあるボタンから同じ目次を開く
+ 本文の横に目次を表示しない画面（1299px 以下のタブレットやスマホなど）では、ヘッダーの自分のアイコンの右隣にあるボタンから同じ目次を開く
 code:script.js
  // ブロック内の変数は、ほかの機能の変数と衝突しない
  {
@@ -1763,7 +1769,7 @@ code:script.js
    })
    toc.append(actions)
  
-   // スマホ幅でヘッダーに置く、目次を開くボタンと、開いている間に本文を覆う背景
+   // 本文の横に目次を表示しない画面でヘッダーに置く、目次を開くボタンと、開いている間に本文を覆う背景
    const toggle = document.createElement('button')
    toggle.type = 'button'
    toggle.className = 'zs-toc-toggle'
@@ -1775,6 +1781,10 @@ code:script.js
    toggleItem.append(toggle)
    const scrim = document.createElement('div')
    scrim.className = 'zs-toc-scrim'
+ 
+   // 本文の横に目次を表示できる画面（1300px 以上で、ページの横にサイドバーがないとき）か
+   const wideScreen = matchMedia('(min-width: 1300px)')
+   const hasSideToc = () => wideScreen.matches && !document.querySelector('.page-column > .page-sidebar')
  
    let headings = []
    let signature = ''
@@ -1859,7 +1869,7 @@ code:script.js
      const column = document.querySelector('.page-column')
      const isPage = Boolean(column) && scrapbox.Layout === 'page'
      headings = isPage ? getHeadings() : []
-     toggleItem.hidden = !isPage
+     toggleItem.hidden = !isPage || hasSideToc()
      toc.classList.toggle('is-active', headings.length >= MIN_HEADINGS)
      if (!isPage) {
        setOpen(false)
@@ -1896,8 +1906,11 @@ code:script.js
    document.addEventListener('keydown', event => {
      if (event.key === 'Escape' && isOpen()) setOpen(false)
    })
-   // 画面幅が広がってボタンが消えたときは閉じる
-   matchMedia('(min-width: 768px)').addEventListener('change', () => setOpen(false))
+   // 画面幅が変わって目次の出し方が変わったときは、開いている目次を閉じてボタンを出し直す
+   wideScreen.addEventListener('change', () => {
+     setOpen(false)
+     scheduleRender(0)
+   })
  
    scrapbox.on('lines:changed', () => scheduleRender())
    scrapbox.on('page:changed', () => {
@@ -2357,7 +2370,7 @@ code:script.js
 [#* ページのダウンロード]
  ページメニューの「ダウンロード」から、表示中のページを Cosense 形式（.txt）か Markdown 形式（.md）で保存する
  Markdown 形式は、ブラウザ内で Cosense の記法を Markdown に変換してから保存する（見出しは目次と同じ規則で判定し、コードブロックは Zenn と同じ `言語:ファイル名` の形式にする）
- 狭い画面では Cosense がページメニューの拡張ボタンを一部しか表示しないため、スマホの目次メニューの下部にもダウンロードボタンを置く
+ 狭い画面では Cosense がページメニューの拡張ボタンを一部しか表示しないため、ヘッダーのボタンで開く目次の下部にもダウンロードボタンを置く
 code:script.js
  // ブロック内の変数は、ほかの機能の変数と衝突しない
  {
