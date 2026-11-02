@@ -656,6 +656,79 @@ code:style.css
    overflow-wrap: anywhere;
  }
 
+[*# UserScript で追加する部品]
+ 絵文字の候補の見た目
+code:style.css
+ /* 絵文字の候補 */
+ .zs-emoji-menu {
+   position: absolute;
+   z-index: 900;
+   box-sizing: border-box;
+   min-width: 180px;
+   max-width: min(320px, calc(100vw - 16px));
+   max-height: min(300px, 45vh);
+   overflow-y: auto;
+   overscroll-behavior: contain;
+   padding: 4px;
+   color: #2e445c;
+   background-color: #fff;
+   border: 1px solid #d6e3ed;
+   border-radius: 8px;
+   box-shadow: 0 6px 18px rgba(33, 53, 71, 0.16);
+   font-size: 14px;
+   line-height: 1.4;
+   letter-spacing: normal;
+ }
+ 
+ .zs-emoji-item {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 5px 8px;
+   border-radius: 6px;
+   white-space: nowrap;
+   cursor: pointer;
+ }
+ 
+ .zs-emoji-item img,
+ .zs-emoji-placeholder {
+   flex: none;
+   width: 20px;
+   height: 20px;
+   object-fit: contain;
+ }
+ 
+ .zs-emoji-placeholder {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   color: #65717b;
+   background-color: #f1f5f9;
+   border-radius: 4px;
+   font-size: 11px;
+   font-weight: 700;
+ }
+ 
+ .zs-emoji-item span {
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+ 
+ .zs-emoji-item:hover,
+ .zs-emoji-item.is-selected {
+   background-color: #f1f5f9;
+ }
+ 
+ .zs-emoji-item.is-selected {
+   color: #0f83fd;
+ }
+ 
+ @media print {
+   .zs-emoji-menu {
+     display: none !important;
+   }
+ }
+
 
 [**# UserScript]
 [#* GitHub ファイル埋め込み]
@@ -774,383 +847,317 @@ code:script.js
 
 [#* Emoji (絵文字)]
 	from: [/yutaro/emoji selector]
+ `:` に続けて名前を入力すると、アイコン（絵文字）の候補を表示する
+	↑↓ または Ctrl+P / Ctrl+N で選択、Enter または Tab で挿入、Esc で閉じる。`:名前:` と入力しても挿入できる
+	英数字の直後の `:`（URL の `https:` や時刻の `12:30` など）では候補を出さない
+	アイコンは最初に `:` を入力したときに読み込み、ページを移動しても使い回す
 code:script.js
- const Asearch = (function() {
-     var INITPAT, INITSTATE, MAXCHAR;
-     INITPAT = 0x80000000; 
-     MAXCHAR = 0x100; 
-     INITSTATE = [INITPAT, 0, 0, 0];
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   const MAX_ITEMS = 30
+   const NAME_PATTERN = /^[\w\s+-]+$/
+   const projectName = scrapbox.Project.name
+   const emojis = []
+   const knownNames = new Set()
+   const loadedProjects = new Set()
+   let loading = null
  
-     Asearch.prototype.isupper = function(c) {
-       return (c >= 0x41) && (c <= 0x5a);
-     };
+   const iconUrl = (project, title) =>
+     `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(title)}/icon`
  
-     Asearch.prototype.islower = function(c) {
-       return (c >= 0x61) && (c <= 0x7a);
-     };
- 
-     Asearch.prototype.tolower = function(c) {
-       if (this.isupper(c)) {
-         return c + 0x20;
-       } else {
-         return c;
+   // アイコン画像を持ち、タイトルが英数字のページを、続きがなくなるまでたどってすべて取得する
+   const fetchIconTitles = async project => {
+     const titles = []
+     let followingId = ''
+     do {
+       const query = followingId ? `?followingId=${encodeURIComponent(followingId)}` : ''
+       const response = await fetch(`/api/pages/${encodeURIComponent(project)}/search/titles${query}`, {credentials: 'same-origin'})
+       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+       for (const page of await response.json()) {
+         if (page.image && NAME_PATTERN.test(page.title)) titles.push(page.title)
        }
-     };
+       followingId = response.headers.get('X-Following-Id') ?? ''
+     } while (followingId)
+     return titles
+   }
  
-     Asearch.prototype.toupper = function(c) {
-       if (this.islower(c)) {
-         return c - 0x20;
-       } else {
-         return c;
-       }
-     };
+   const loadEmojis = async project => {
+     if (loadedProjects.has(project)) return
+     const titles = await fetchIconTitles(project)
+     loadedProjects.add(project)
+     for (const name of titles) {
+       if (knownNames.has(name)) continue
+       knownNames.add(name)
+       emojis.push({
+         name,
+         path: project === projectName ? name : `/${project}/${name}`,
+         icon: iconUrl(project, name)
+       })
+     }
+   }
  
-     function Asearch(source) {
-       var c, i, j, len, mask, ref, ref1;
-       this.source = source;
-       this.shiftpat = [];
-       this.epsilon = 0;
-       this.acceptpat = 0;
-       mask = INITPAT;
-       for (c = i = 0, ref = MAXCHAR; 0 <= ref ? i < ref : i > ref; c = 0 <= ref ? ++i : --i) {
-         this.shiftpat[c] = 0;
+   const loadProjectEmojis = () => {
+     loading ??= loadEmojis(projectName).catch(error => {
+       loading = null
+       console.error('[Cosense Zenn Style] 絵文字の候補を読み込めませんでした', error)
+     })
+     return loading
+   }
+ 
+   // 並び順: 完全一致 → 前方一致 → 単語の前方一致 → 部分一致 → 文字を順に含む
+   const rank = (name, query) => {
+     const target = name.toLowerCase()
+     if (target === query) return 0
+     if (target.startsWith(query)) return 1
+     if (target.split(/[\s_+-]+/).some(word => word.startsWith(query))) return 2
+     if (target.includes(query)) return 3
+     let index = 0
+     for (const char of target) {
+       if (char === query[index]) index++
+     }
+     return index === query.length ? 4 : -1
+   }
+ 
+   const search = text => {
+     const query = text.toLowerCase()
+     return emojis
+       .map(emoji => ({emoji, score: rank(emoji.name, query)}))
+       .filter(({score}) => score >= 0)
+       .sort((a, b) => a.score - b.score || a.emoji.name.length - b.emoji.name.length || a.emoji.name.localeCompare(b.emoji.name))
+       .slice(0, MAX_ITEMS)
+       .map(({emoji}) => emoji)
+   }
+ 
+   const menu = document.createElement('div')
+   menu.className = 'zs-emoji-menu'
+   menu.setAttribute('role', 'listbox')
+   menu.setAttribute('aria-label', '絵文字の候補')
+   menu.hidden = true
+   document.body.append(menu)
+ 
+   // 候補を押してもエディターからフォーカスが外れないようにする
+   menu.addEventListener('mousedown', event => {
+     event.preventDefault()
+     event.stopPropagation()
+   })
+ 
+   let active = false // 「:」を入力して、名前を入力している途中か
+   let query = ''
+   let matches = []
+   let selected = 0
+ 
+   const close = () => {
+     active = false
+     query = ''
+     matches = []
+     menu.hidden = true
+   }
+ 
+   const select = index => {
+     selected = (index + matches.length) % matches.length
+     for (const [i, item] of [...menu.children].entries()) {
+       item.classList.toggle('is-selected', i === selected)
+       item.setAttribute('aria-selected', String(i === selected))
+     }
+     const item = menu.children[selected]
+     if (!item) return
+     if (item.offsetTop < menu.scrollTop) {
+       menu.scrollTop = item.offsetTop
+     } else if (item.offsetTop + item.offsetHeight > menu.scrollTop + menu.clientHeight) {
+       menu.scrollTop = item.offsetTop + item.offsetHeight - menu.clientHeight
+     }
+   }
+ 
+   // カーソルの下（下に入らないときは上）に、画面からはみ出さないように表示する
+   const place = () => {
+     const caret = document.querySelector('.cursor-container .cursor') ?? document.getElementById('text-input')
+     if (!caret) return
+     const rect = caret.getBoundingClientRect()
+     menu.hidden = false
+     const width = menu.offsetWidth
+     const height = menu.offsetHeight
+     const left = Math.max(8, Math.min(rect.left, document.documentElement.clientWidth - width - 8))
+     let top = rect.bottom + 4
+     if (top + height > window.innerHeight - 8 && rect.top - height - 4 > 48) top = rect.top - height - 4
+     menu.style.left = `${Math.round(left + window.scrollX)}px`
+     menu.style.top = `${Math.round(top + window.scrollY)}px`
+   }
+ 
+   const insert = emoji => {
+     const input = document.getElementById('text-input')
+     const length = query.length + 1 // 「:」と、その後に入力した名前の文字数
+     close()
+     if (!input || !emoji) return
+     input.focus()
+     setTimeout(() => {
+       for (let i = 0; i < length; i++) {
+         const event = document.createEvent('Events')
+         event.initEvent('keydown', true, true)
+         event.keyCode = event.which = 8 // Backspace
+         input.dispatchEvent(event)
        }
-       ref1 = this.unpack(this.source);
-       for (j = 0, len = ref1.length; j < len; j++) {
-         c = ref1[j];
-         if (c === 0x20) {
-           this.epsilon |= mask;
-         } else {
-           this.shiftpat[c] |= mask;
-           this.shiftpat[this.toupper(c)] |= mask;
-           this.shiftpat[this.tolower(c)] |= mask;
-           mask >>>= 1;
-         }
+       document.execCommand('insertText', false, `[${emoji.path}.icon]`)
+     }, 0)
+   }
+ 
+   const render = () => {
+     if (!active || query === '') {
+       menu.hidden = true
+       return
+     }
+     matches = search(query)
+     if (matches.length === 0) {
+       menu.hidden = true
+       return
+     }
+     selected = Math.min(selected, matches.length - 1)
+     menu.replaceChildren(...matches.map((emoji, index) => {
+       const item = document.createElement('div')
+       item.className = 'zs-emoji-item'
+       item.setAttribute('role', 'option')
+       item.setAttribute('aria-selected', String(index === selected))
+       item.classList.toggle('is-selected', index === selected)
+       const image = document.createElement('img')
+       image.src = emoji.icon
+       image.alt = ''
+       image.loading = 'lazy'
+       // アイコン画像を読み込めないときは、名前の頭文字を代わりに表示する
+       image.addEventListener('error', () => {
+         const placeholder = document.createElement('span')
+         placeholder.className = 'zs-emoji-placeholder'
+         placeholder.textContent = emoji.name.slice(0, 1).toUpperCase()
+         image.replaceWith(placeholder)
+       }, {once: true})
+       const name = document.createElement('span')
+       name.textContent = `:${emoji.name}:`
+       item.append(image, name)
+       item.addEventListener('click', () => insert(emoji))
+       return item
+     }))
+     menu.scrollTop = 0
+     place()
+   }
+ 
+   // カーソル直前の 1 文字（行頭なら空文字）を、カーソルと文字の表示位置から求める
+   const charBeforeCursor = line => {
+     const caret = document.querySelector('.cursor-container .cursor')
+     if (!caret) return ''
+     const rect = caret.getBoundingClientRect()
+     const middle = rect.top + rect.height / 2
+     let before = ''
+     for (const char of line.querySelectorAll('span.char-index')) {
+       const box = char.getBoundingClientRect()
+       if (box.width === 0 || box.top > middle || box.bottom < middle) continue
+       if (Math.abs(box.right - rect.left) <= 2) before = char.dataset.char ?? char.textContent
+     }
+     return before
+   }
+ 
+   // 行頭・空白・日本語などの直後の「:」だけで候補を出す
+   const canStart = () => {
+     if (scrapbox.Layout !== 'page') return false
+     const line = document.querySelector('.lines .line.cursor-line')
+     if (!line || line.querySelector('.code-block')) return false
+     const before = charBeforeCursor(line)
+     return before === '' || /\s/.test(before) || !/[\x21-\x7e]/.test(before)
+   }
+ 
+   const consume = event => {
+     event.preventDefault()
+     event.stopPropagation()
+   }
+ 
+   document.addEventListener('keydown', event => {
+     if (!event.isTrusted || event.target?.id !== 'text-input') return
+     if (event.isComposing || event.key === 'Process') return
+     const {key} = event
+ 
+     if (!active) {
+       if (key === ':' && canStart()) {
+         active = true
+         query = ''
+         selected = 0
+         loadProjectEmojis().then(() => requestAnimationFrame(render))
        }
-       this.acceptpat = mask;
-       return this;
+       return
      }
  
-     Asearch.prototype.state = function(state, str) {
-       var c, i, i0, i1, i2, i3, len, mask, ref;
-       if (state == null) {
-         state = INITSTATE;
+     if (!menu.hidden && matches.length > 0) {
+       const down = key === 'ArrowDown' || (event.ctrlKey && key === 'n')
+       const up = key === 'ArrowUp' || (event.ctrlKey && key === 'p')
+       if (down || up) {
+         consume(event)
+         select(selected + (down ? 1 : -1))
+         return
        }
-       if (str == null) {
-         str = '';
+       if (key === 'Enter' || key === 'Tab') {
+         consume(event)
+         insert(matches[selected])
+         return
        }
-       i0 = state[0];
-       i1 = state[1];
-       i2 = state[2];
-       i3 = state[3];
-       ref = this.unpack(str);
-       for (i = 0, len = ref.length; i < len; i++) {
-         c = ref[i];
-         mask = this.shiftpat[c];
-         i3 = (i3 & this.epsilon) | ((i3 & mask) >>> 1) | (i2 >>> 1) | i2;
-         i2 = (i2 & this.epsilon) | ((i2 & mask) >>> 1) | (i1 >>> 1) | i1;
-         i1 = (i1 & this.epsilon) | ((i1 & mask) >>> 1) | (i0 >>> 1) | i0;
-         i0 = (i0 & this.epsilon) | ((i0 & mask) >>> 1);
-         i1 |= i0 >>> 1;
-         i2 |= i1 >>> 1;
-         i3 |= i2 >>> 1;
+       if (key === 'Escape') {
+         consume(event)
+         close()
+         return
        }
-       return [i0, i1, i2, i3];
-     };
+     }
  
-     Asearch.prototype.match = function(str, ambig) {
-       var s;
-       if (ambig == null) {
-         ambig = 0;
+     if (key === ':') {
+       const emoji = emojis.find(item => item.name === query)
+       if (emoji) {
+         consume(event)
+         insert(emoji)
+       } else {
+         close()
        }
-       s = this.state(INITSTATE, str);
-       if (!(ambig < INITSTATE.length)) {
-         ambig = INITSTATE.length - 1;
+       return
+     }
+ 
+     if (key === 'Backspace') {
+       if (query === '') {
+         close()
+       } else {
+         query = query.slice(0, -1)
+         selected = 0
+         requestAnimationFrame(render)
        }
-       return (s[ambig] & this.acceptpat) !== 0;
-     };
+       return
+     }
  
-     Asearch.prototype.unpack = function(str) {
-       var bytes, c, code, i, len, ref;
-       bytes = [];
-       ref = str.split('');
-       for (i = 0, len = ref.length; i < len; i++) {
-         c = ref[i];
-         code = c.charCodeAt(0);
-         if (code > 0xFF) {
-           bytes.push((code & 0xFF00) >>> 8);
-         }
-         bytes.push(code & 0xFF);
+     if (key.length === 1 && NAME_PATTERN.test(key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+       if (key === ' ' && query === '') {
+         close()
+         return
        }
-       return bytes;
-     };
+       query += key
+       selected = 0
+       requestAnimationFrame(render)
+       return
+     }
  
-     return Asearch;
+     if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(key)) return
+     close()
+   }, true)
  
-   })();
+   // 候補の外をクリックしたときや、ページを移動したときは閉じる
+   document.addEventListener('pointerdown', event => {
+     if (active && !menu.contains(event.target)) close()
+   }, true)
+   scrapbox.on('page:changed', close)
  
- 
- 
- const projectName = scrapbox.Project.name;
- let emojis = [];
- const box = $('<div>').addClass('form-group').css("position", "absolute");
- const container = $('<div>').addClass('dropdown');
- box.append(container);
- let items = $('<ul>').addClass('dropdown-menu');
- container.append(items);
- $('#editor').append(box);
- 
- fetch(`/api/pages/${projectName}?limit=10000`, { credentials: 'same-origin'})
- 	.then( res => res.text())
-     .then( text => {
-     	const data = JSON.parse( text );
-      	const pages = data.pages;
-       	pages.filter( page => (page.image !== null && page.title.match(/^[\w\s\-\+]+$/)))
-      		.forEach( page => {
-        			emojis.push({
-        				name: page.title,
-            			path: page.title,
-           			icon: `/api/pages/${projectName}/${page.title}/icon`,
-             	})
-              })
-     })
- 
- 
- scrapbox.PageMenu.addMenu({
+   scrapbox.PageMenu.addMenu({
      title: 'emoji',
      image: 'https://i.gyazo.com/49db853b2f42e1e26d07e3f982eae2f4.png'
- })
- scrapbox.PageMenu('emoji').addItem({
-     title: "load emojis from /emoji",
-     onClick: () => {
-     	 fetch('/api/pages/emoji?limit=10000')
-       	.then( res => res.text())
-        	.then( text => {
-         	const data = JSON.parse( text );
-           	const pages = data.pages;
-            	pages.filter( page => (page.image !== null && page.title.match(/^[\w\s\-\+]+$/)))
-             		.forEach( page => {
-               			for( let emoji of emojis ) {
-                           if( emoji.name === page.title )return;
-                     	}
-               			emojis.push({
-                 			name: page.title,
-                    			path: '/emoji/' + page.title,
-                      		icon: `/api/pages/emoji/${page.title}/icon`,
-                 		})
-               		})
-            })
+   })
+   scrapbox.PageMenu('emoji').addItem({
+     title: 'load emojis from /emoji',
+     onClick: async () => {
+       try {
+         await loadProjectEmojis() // 同じ名前は自分のプロジェクトのアイコンを優先する
+         await loadEmojis('emoji')
+       } catch (error) {
+         console.error('[Cosense Zenn Style] /emoji の絵文字を読み込めませんでした', error)
+       }
      }
- })      		
- 
-  // TODO: 様々な文字列が来る場合を考慮する
-  
-  const taberareloo = ( word, list ) => {
-  	const targetWord = word.replace(':', '');
-  	const regStr = targetWord.split('').reduce( (pre, cur) => pre + cur + '.*' ).replace('+', '\\+');
-   	const reg = RegExp(regStr,'i');
-    	return list.filter( item => item.name.match(reg));
-  }
-  
-  const asearched = ( word, list ) => {
-  	const targetWord = word.replace(':', '');
-   	const a = new Asearch( targetWord );
-     const limitCount = Math.floor( targetWord.length/ 4 ) + 1;
-     let result = [];
-     
-     for(let i = 0; i <= limitCount; i++){
-     	let matched = list.filter( item => a.match( item.name, i));
-      	let notExisted = matched.filter( item => {
-       		for( let r of result){
-         		if(r.name === item.name){
-           			return false;
-           		}
-         	}
-          	return true;
-       	})
-        	result = [ ...result, ...notExisted];
-     }
-     
-    	return result;
-  }
-  
-  const fizzSearch = ( word, list ) => {
-  	const a = asearched( word, list );
-   	const b = taberareloo( word, list );
-    	const c = b.filter( item => {
-     	for( let r of a ){
-      		if( r.name == item.name){
-        			return false;
-        		}
-      	}
-       	return true;
-     })
-    	return [...a, ...c];
-  }
-  
- 
-  let stack = "";
-  const editor = $('#editor');
-  
-  const open  = () => container.addClass("open"); 
-  const close = () => {
-  	stack = "";
-  	container.removeClass("open");
-  }
-  
-  const replaceText = (text, cursor, emojiPath) => {
-  	cursor.focus();
-     setTimeout(()=>{
-     	for(let i = 0; i < text.length; i++){
-         	var ke1 = document.createEvent("Events");
-          	ke1.initEvent("keydown", true, true);
-          	ke1.keyCode = ke1.which = 8; // Backspace
-          	cursor.dispatchEvent(ke1);
-         }
-         document.execCommand('insertText',null, `[${emojiPath}.icon]` );
-         close();
-     }, 50)
-  }
-  
-  editor.keydown( e => {
-  	const key = e.key;
-   	if(key === undefined ) return;
-  	if( stack === "" && key !== ":"){
-   		close();	
-   		return
-     };
- 
-     if ($('.cursor-line').text().trim() == 'code:'
-        		|| $('.cursor-line .code-block').length == 1) {
-        close()
-        return;
-     }
-     
-     if( key === ':' && stack.length !== 0){
-     	let name = stack.replace(':', '');
-     	for(let emoji of emojis){
-      		if( emoji.name === name ){
-        			let cursor = $('#text-input')[0];
-        			replaceText(stack + ":", cursor, emoji.path);
-           		return;
-        		}
-      	}
-       	close()
-        	return;
-     }
- 	const cursor = $('#text-input')[0];
-     if( key.match(/^[\w\s\-\:\+]$/) ){
-     	stack += e.key;
-      	let focused = $(':focus');
-       	if(focused.is(items.find('li > a'))){
-      		cursor.focus();  		
-        	}
-     }
-   
-     if( stack.length === 2 ){
-     	if( key === " " ){
-      		stack = "";
-        		return;
-      	}
-     	open();
-      }
-     
-     switch(key){
-     	case 'Backspace':
-      		stack = stack.slice(0, stack.length - 1);
-        		if(stack.length === 0){
-          		close();
-            		return;
-          	}
-        		break;
-         case 'ArrowUp':
-         	let focusedUp = $(':focus');
-          	if( focusedUp.is(items.find('li > a').eq(0)) ){
-           		e.stopPropagation();
-             	cursor.focus();
-           	}else if( !focusedUp.is(items.find('li > a')) ){
-            		close();
-              	return;
-             }
-          	break;
-         case 'ArrowDown':
-         	let focusedDown = $(':focus');
-         	if( !focusedDown.is(items.find('li > a'))) {
-         		e.stopPropagation();
-           		e.preventDefault();
-          		items.find("li > a").eq(0).focus();
-             }
-             break;
-         case 'Escape':
-         case 'ArrowLeft':
-         case 'ArrowRight': 
-         case 'Home':
-         case 'End':
-         case 'PageUp':
-         case 'PageDown':
-          	close();
-           	break;
-         
-         case 'Enter':
-         	if( stack.length === 1 ){
-          		close();
-            		break;
-          	}
-           	let focused = $(':focus');
-           	if(!focused.is(items.find('li > a'))){
-            		e.stopPropagation();
-                 e.preventDefault();
-           		items.find('li > a').eq(0).click();
-             }
-           break;
-     }
-     
-     if( stack.length <= 1 || !key.match(/^[\w\s\:\-\+]$|Backspace/)) return;
-     const matchedEmoji = fizzSearch(stack, emojis)
-     if( matchedEmoji.length === 0){
-     	close();
-      	return;
-     }
-     
-     const newItems = $('<ul>').addClass('dropdown-menu');
-     
-     matchedEmoji.forEach( ( emoji, index) => {
-       if( index > 30 ) return;
-       const li = $('<li>').addClass('dropdown-item');
-       const a  = $('<a>').attr("tabindex", "0");
-       const img = $('<img>').attr("src", emoji.icon)
-          .addClass("icon").css({ height: "17px", float: "left"});
-       const nameTag = $('<div>').text("  :" + emoji.name + ":");
-       a.append(img);
-       a.append(nameTag);
-       li.append(a);
-       newItems.append(li);
- 	
-       a.on('click', () => {
-        	cursor.focus();
-         replaceText(stack, cursor, emoji.path);
-       })
-       
-       a.on('keypress', ev => {
-       	 if(ev.key === "Enter"){
-         	ev.preventDefault();
-          	ev.stopPropagation();
-          	replaceText(stack, cursor, emoji.path);
-          }
-       })
- 	})
-  	
-   	items.replaceWith(newItems);
-   	items = newItems;
-     let css = {};
-    	cursor.style.cssText.split(';').filter( text => text !== '' )
-     	.forEach( text => {
-      		const props = text.split(':').map( text => text.replace(' ', '').replace('px', ''));
-        		css[props[0]] = props[1];
-     	});
-     
-   	box.css({
-    		top: `${parseInt(css.top) + parseInt(css.height) + 3}px`,
-      	left: `${css.left}px`,
-    	});
-  })
+   })
+ }
