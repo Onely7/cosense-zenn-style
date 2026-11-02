@@ -234,7 +234,7 @@ code:style.css
  マイページの UserScript から GitHub Raw への `fetch()` は行わない。
 
 [*# X（Twitter）ポスト埋め込み]
- X（Twitter）ポスト埋め込みは、公式の `widgets.js` を利用する Tampermonkey 用の `cosense_x_post_embed_tampermonkey.user.js` 側で CSS と JavaScript を管理する。
+ X（Twitter）ポスト埋め込みは、X の Syndication API から投稿データを取得し、iframe を使わない静的なカードとして描画する Tampermonkey 用の `cosense_x_post_embed_tampermonkey.user.js` 側で CSS と JavaScript を管理する。
  ポスト URL だけの行を対象とし、通常はリプライ元を含め、`?conversation=none` の指定時だけリプライ元を非表示にする。
 
 [*# コードブロック・インラインコード]
@@ -735,7 +735,7 @@ code:style.css
  Cosense の CSP で GitHub Raw への通信が拒否されるため、この機能は Tampermonkey 用 userscript で実行する。
 
 [#* X（Twitter）ポスト埋め込み]
- X（Twitter）の公式ウィジェットを Cosense 上へ安定して表示するため、この機能は Tampermonkey 用 userscript で実行する。
+ Cosense の CSP で X の公式ウィジェット（iframe）や投稿データの取得が制限されるため、この機能は Tampermonkey 用 userscript で実行する。
 
 [#* ページ内目次の自動生成]
 	from: [/daiiz/ページの見出しを作るUserScript]
