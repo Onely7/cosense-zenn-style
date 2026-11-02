@@ -10,6 +10,7 @@ code:style.css
  :root {
    /* 寸法 */
    --zs-page-width: 960px; /* 本文の最大幅（Cosense 標準と同じ） */
+   --zs-toc-width: 240px; /* 広い画面で本文の横に表示する目次の幅 */
    --zs-font-size: 18px;
    --zs-line-height: 32px;
    --zs-letter-spacing: 0.5px;
@@ -826,7 +827,7 @@ code:style.css
  }
 
 [*# UserScript で追加する部品]
- 絵文字の候補の見た目
+ 絵文字の候補・追従する目次の見た目
 code:style.css
  /* 絵文字の候補 */
  .zs-emoji-menu {
@@ -892,8 +893,116 @@ code:style.css
    color: var(--zs-accent-strong);
  }
  
+ /* 追従する目次（1300px 以上の画面で、本文の右に表示する） */
+ .zs-toc {
+   display: none;
+ }
+ 
+ @media (min-width: 1300px) {
+   .app:not(.presentation) .container:has(> .page-column > .zs-toc.is-active) {
+     max-width: max(1200px, calc(var(--zs-page-width) + var(--zs-toc-width) + 92px));
+   }
+ 
+   .app:not(.presentation) .page-column:has(> .zs-toc.is-active):not(:has(> .page-sidebar)) {
+     grid-template-columns: minmax(200px, var(--zs-page-width)) var(--zs-toc-width) min-content;
+     grid-template-areas: "page toc menu";
+   }
+ 
+   .app:not(.presentation) .page-column:not(:has(> .page-sidebar)) > .zs-toc.is-active {
+     display: block;
+     grid-area: toc;
+     position: sticky;
+     top: 56px;
+     box-sizing: border-box;
+     max-height: calc(100vh - 72px);
+     overflow-y: auto;
+     overscroll-behavior: contain;
+     padding: 16px 12px 16px 14px;
+     color: var(--zs-text-muted);
+     background-color: var(--zs-surface);
+     border-radius: 8px;
+     font-size: 13px;
+     line-height: 1.5;
+     letter-spacing: normal;
+   }
+ }
+ 
+ .zs-toc-title {
+   margin: 0 0 8px;
+   color: var(--zs-text);
+   font-size: 14px;
+   font-weight: 700;
+ }
+ 
+ .zs-toc-list {
+   position: relative;
+   margin: 0;
+   padding: 0;
+   list-style: none;
+ }
+ 
+ /* 見出しをつなぐ縦線 */
+ .zs-toc-list::before {
+   content: "";
+   position: absolute;
+   top: 10px;
+   bottom: 10px;
+   left: 4px;
+   width: 2px;
+   background-color: var(--zs-border);
+   border-radius: 1px;
+ }
+ 
+ .zs-toc-item {
+   position: relative;
+   margin: 0;
+ }
+ 
+ .zs-toc-item a {
+   display: block;
+   padding: 3px 4px 3px calc(18px + var(--zs-toc-depth, 0) * 12px);
+   color: inherit;
+   text-decoration: none;
+   overflow-wrap: anywhere;
+   border-radius: 6px;
+ }
+ 
+ /* 縦線上の点（最上位の見出しだけ大きくする） */
+ .zs-toc-item a::before {
+   content: "";
+   position: absolute;
+   top: calc(3px + 0.75em - 3px);
+   left: 2px;
+   width: 6px;
+   height: 6px;
+   background-color: var(--zs-border);
+   border-radius: 50%;
+ }
+ 
+ .zs-toc-item[data-depth="0"] a::before {
+   top: calc(3px + 0.75em - 5px);
+   left: 0;
+   width: 10px;
+   height: 10px;
+ }
+ 
+ .zs-toc-item a:hover {
+   color: var(--zs-accent-strong);
+   background-color: var(--zs-surface-muted);
+ }
+ 
+ .zs-toc-item.is-current a {
+   color: var(--zs-accent-strong);
+   font-weight: 700;
+ }
+ 
+ .zs-toc-item.is-current a::before {
+   background-color: var(--zs-accent);
+ }
+ 
  @media print {
-   .zs-emoji-menu {
+   .zs-emoji-menu,
+   .zs-toc {
      display: none !important;
    }
  }
@@ -914,6 +1023,7 @@ code:script.js
  /*
   * ページ内の見出しを集める。
   * level は * の数、depth は最上位の見出しを 0 とした階層の深さ。
+  * 追従する目次でも使う。
   */
  function getHeadings () {
    const candidates = []
@@ -1013,6 +1123,115 @@ code:script.js
      }
    }
  })
+
+[#* 追従する目次]
+ 画面幅が 1300px 以上のとき、見出しが 2 つ以上あるページでは本文の右に目次を表示し、スクロールに合わせて現在の見出しを強調する
+code:script.js
+ // ブロック内の変数は、ほかの機能の変数と衝突しない
+ {
+   const MIN_HEADINGS = 2
+   const CURRENT_OFFSET = 120 // 画面上端からこの距離までに入った見出しを「現在の見出し」とする
+ 
+   const toc = document.createElement('nav')
+   toc.className = 'zs-toc'
+   toc.setAttribute('aria-label', '目次')
+   const title = document.createElement('p')
+   title.className = 'zs-toc-title'
+   title.textContent = '目次'
+   const list = document.createElement('ol')
+   list.className = 'zs-toc-list'
+   toc.append(title, list)
+ 
+   let headings = []
+   let signature = ''
+   let currentId = null
+ 
+   const createItem = heading => {
+     const item = document.createElement('li')
+     item.className = 'zs-toc-item'
+     item.dataset.id = heading.id
+     item.dataset.depth = heading.depth
+     item.style.setProperty('--zs-toc-depth', heading.depth)
+     const link = document.createElement('a')
+     link.href = `#${heading.id}`
+     link.textContent = heading.text || '（無題）'
+     link.addEventListener('click', event => {
+       event.preventDefault()
+       jumpToLine(heading.id)
+     })
+     item.append(link)
+     return item
+   }
+ 
+   // 目次がスクロールできるときは、現在の見出しが見える位置まで目次をスクロールする
+   const revealItem = item => {
+     if (toc.scrollHeight <= toc.clientHeight) return
+     const top = item.getBoundingClientRect().top - toc.getBoundingClientRect().top + toc.scrollTop
+     const bottom = top + item.offsetHeight
+     if (top < toc.scrollTop + 48) {
+       toc.scrollTop = Math.max(0, top - 48)
+     } else if (bottom > toc.scrollTop + toc.clientHeight - 16) {
+       toc.scrollTop = bottom - toc.clientHeight + 16
+     }
+   }
+ 
+   const updateCurrent = () => {
+     if (!toc.classList.contains('is-active')) return
+     let id = headings[0]?.id ?? null
+     for (const heading of headings) {
+       const line = document.getElementById(`L${heading.id}`)
+       if (!line) continue
+       if (line.getBoundingClientRect().top > CURRENT_OFFSET) break
+       id = heading.id
+     }
+     if (id === currentId) return
+     currentId = id
+     for (const item of list.children) {
+       item.classList.toggle('is-current', item.dataset.id === id)
+     }
+     const current = list.querySelector('.is-current')
+     if (current) revealItem(current)
+   }
+ 
+   const render = () => {
+     const column = document.querySelector('.page-column')
+     headings = scrapbox.Layout === 'page' ? getHeadings() : []
+     if (!column || headings.length < MIN_HEADINGS) {
+       toc.classList.remove('is-active')
+       return
+     }
+     if (toc.parentElement !== column) column.append(toc)
+     const nextSignature = headings.map(heading => `${heading.id} ${heading.depth} ${heading.text}`).join('\n')
+     if (nextSignature !== signature) {
+       signature = nextSignature
+       currentId = null
+       list.replaceChildren(...headings.map(createItem))
+     }
+     toc.classList.add('is-active')
+     updateCurrent()
+   }
+ 
+   let renderTimer = 0
+   const scheduleRender = (delay = 300) => {
+     clearTimeout(renderTimer)
+     renderTimer = setTimeout(render, delay)
+   }
+ 
+   let ticking = false
+   window.addEventListener('scroll', () => {
+     if (ticking) return
+     ticking = true
+     requestAnimationFrame(() => {
+       ticking = false
+       updateCurrent()
+     })
+   }, {passive: true})
+ 
+   scrapbox.on('lines:changed', () => scheduleRender())
+   scrapbox.on('page:changed', () => scheduleRender(0))
+   scrapbox.on('layout:changed', () => scheduleRender(0))
+   scheduleRender(0)
+ }
 
 [#* Emoji (絵文字)]
 	from: [/yutaro/emoji selector]
