@@ -124,7 +124,8 @@ code:style.css
 
 [*# 外部リンクに対するアイコン]
 code:style.css
- .line a.link:not(.icon)::before { font-family:'Font Awesome 5 Free'; content: ''; display: inline-block }
+ /* 外部リンクにはアイコンを付けない。疑似要素自体を作らず、長い URL が 1 行目を空けて折り返されるのを防ぐ */
+ .line a.link:not(.icon)::before { content: none }
 
 [*#  カーソル迷子対策]
 code:style.css
