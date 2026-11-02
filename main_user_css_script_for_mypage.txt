@@ -107,17 +107,20 @@ code:style.css
  `[_]` -> [_]
  `[x]` -> [x]
 code:style.css
- /* チェックボックスになるタグ v2 Font Awesome版 */
-  .line:not(.cursor-line) a[href='./_']:not(.icon) span,
-  .line:not(.cursor-line) a[href='./x']:not(.icon) span {
+ /*
+  * チェックボックスになるタグ v2 Font Awesome版
+  * Cosense のリンクは /プロジェクト名/_ の形になるため、href の末尾で判定する（ハッシュタグは除く）
+  */
+  .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon) span,
+  .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon) span {
     display: inline-block; width: 0; text-indent: -9999px }
-  .line:not(.cursor-line) a[href='./_']:not(.icon)::after,
-  .line:not(.cursor-line) a[href='./x']:not(.icon)::after {
+  .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon)::after,
+  .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon)::after {
     display: inline-block; min-width: 1.15em; padding-left: 1px;
     font-family: 'Font Awesome 5 Free'; font-weight: 400;
     font-size: 120%; text-align: center; vertical-align: middle }
-  .line:not(.cursor-line) a[href='./_']:not(.icon)::after { content: '\f0c8'; color: #3ea8ff }
-  .line:not(.cursor-line) a[href='./x']:not(.icon)::after { content: '\f14a'; color: #0f83fd }
+  .line:not(.cursor-line) a.page-link[type="link"][href$="/_"]:not(.icon)::after { content: '\f0c8'; color: #3ea8ff }
+  .line:not(.cursor-line) a.page-link[type="link"][href$="/x"]:not(.icon)::after { content: '\f14a'; color: #0f83fd }
 
 [*# 外部リンクに対するアイコン]
 code:style.css
