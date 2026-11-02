@@ -18,15 +18,19 @@ It keeps the core Cosense editing experience intact while refining the appearanc
 
 Paste `main_user_css_script_for_mypage.txt` into your My Page to customize the following elements and behaviors:
 
-- Background color, content width, font size, and line spacing
+- Background color, content width, font size, and line spacing (slightly smaller text on narrow screens)
 - Headings, highlights, checkboxes, and bullet lists
 - Blockquotes
+- Message boxes similar to Zenn's `:::message`
 - Inline code and code blocks
 - Tables
 - Navigation bar
 - Visibility of the active line and text cursor
-- In-page heading menu
+- In-page heading menu (headings listed with their hierarchy)
+- A sticky table of contents next to the page on wide screens
+- Copying links to headings
 - Emoji search and insertion
+- Support for Cosense dark themes
 
 ### Optional features using Tampermonkey
 
@@ -84,8 +88,12 @@ If you already have a My Page, open that page instead.
 
 1. Open [`main_user_css_script_for_mypage.txt`](main_user_css_script_for_mypage.txt).
 2. Copy the entire file.
-3. Paste it into your Cosense My Page.
+3. In your Cosense My Page, place the cursor on an empty line or a regular text line, then paste.
 4. Reload the Cosense tab.
+5. If Cosense shows a banner saying that your UserScript has been updated, review your My Page and then click the button in the banner to load the UserScript.
+
+> [!NOTE]
+> If you paste multiple lines while the cursor is on a blockquote line (a line starting with `>`), Cosense transforms the pasted text and may break symbols or indentation.
 
 The file contains the following two types of code blocks:
 
@@ -107,6 +115,57 @@ code:script.js
 4. Check the appearance of headings, blockquotes, code blocks, tables, and other elements.
 
 The basic customizations are now complete. Tampermonkey is not required up to this point.
+
+## Usage
+
+### Headings
+
+Add `#` to the bold notation, as in `[*# Heading]`, to display a line as a heading. More `*` characters produce a larger heading.
+
+```text
+[***# Large heading]
+[**# Medium heading]
+[*# Small heading]
+```
+
+### Message boxes
+
+You can write boxes equivalent to Zenn's `:::message` and `:::message alert` with the following notation:
+
+```text
+[~ Message]
+[~! Warning message]
+```
+
+Consecutive lines of the same type are displayed as a single box.
+
+### Table of contents and heading links
+
+- Use **見出し** (Headings) in the page menu on the right to jump to a heading on the page. Headings containing `#` are listed with a hierarchy based on the number of `*` characters. On pages without such headings, lines that consist only of bold text, such as `[** Heading]`, are used instead.
+- On screens 1300px or wider, pages with two or more headings show a table of contents to the right of the page. The current heading is highlighted as you scroll.
+- When you hover over a heading (or tap it on a phone), a button appears that copies a link to that heading (the page URL with the line ID).
+
+### Emoji suggestions
+
+Type `:` followed by a name at the start of a line or after a space or Japanese text to see suggestions from the icons in your project (pages with an image and an alphanumeric title).
+
+- Use `↑` / `↓` (or `Ctrl + P` / `Ctrl + N`) to select, and press `Enter` or `Tab` to insert. Press `Esc` to close the list.
+- You can also insert an icon by typing the full `:name:`.
+- Suggestions do not appear for a `:` right after a letter or digit, such as `https:` in a URL or `12:30`.
+- Click **load emojis from /emoji** under **emoji** in the page menu to add the icons of the [/emoji](https://scrapbox.io/emoji) project. Icons whose images cannot be loaded are shown with the first letter of their names.
+
+### Adjusting colors and width
+
+Edit the CSS custom properties in the `[*# 配色と寸法]` code block to change colors and the content width.
+
+| Property | Description | Default |
+| --- | --- | --- |
+| `--zs-page-width` | Maximum width of the page content | `960px` |
+| `--zs-toc-width` | Width of the sticky table of contents | `240px` |
+| `--zs-font-size` / `--zs-line-height` | Font size and line height of the text (`16px` / `28px` on screens 767px wide or narrower) | `18px` / `32px` |
+| `--zs-accent` | Accent color for checkboxes, the new page button, the table of contents, and more | `#3ea8ff` |
+
+When the project theme is default-dark, paper-dark-dark, hacker1, or hacker2, the colors automatically switch to a palette for dark backgrounds. Cosense's own interface, such as the navigation bar and background, keeps the theme colors.
 
 ## Embedding GitHub files
 
@@ -248,6 +307,7 @@ Check the following in order:
 ### The heading menu or emoji suggestions do not work
 
 - Confirm that UserScript is enabled.
+- If Cosense shows a banner saying that your UserScript has been updated, click the button in the banner to load the UserScript.
 - Check that the `code:script.js` code blocks and their indentation are intact.
 - Reload Cosense after applying the settings.
 
